@@ -1,0 +1,36 @@
+#2 - Phase 2: Campaigns & Shared Party Ledger
+What & Why
+Introduce the campaign layer — the social container that groups characters, enables DM/player collaboration, and hosts the Shared Party Ledger. This phase delivers the campaign dashboard, party overview, and the full party inventory/ledger system with currency management and transaction history.
+
+Done looks like
+Users can create and join campaigns (via invite code) with DM and player roles
+A campaign dashboard shows all party members with key stats (HP, AC, passive Perception, conditions)
+Characters can be attached to a campaign
+A Party Inventory screen shows shared items with ownership, filters, and search
+A Party Currency Pool supports all D&D denominations with automatic conversion and coin containers
+Items can be moved between individual character inventories and the party stash (drag-and-drop or action menus)
+Every inventory transaction is recorded as a LedgerEntry with timestamp, actor, and notes
+A Transaction History tab shows the full audit trail with filters
+Helper actions exist for even coin split across party members (with remainder handling) and stack splitting
+Out of scope
+AI-assisted ledger suggestions (Phase 3)
+Real-time WebSocket sync (deferred, static polling acceptable for MVP)
+Session recap / notes (Phase 3)
+Social discovery (Phase 4)
+Steps
+Campaign & membership schema — Add Campaign, CampaignMember (roles: DM/player), and CampaignCharacter join tables to the database schema.
+
+Party ledger schema — Add PartyInventory, PartyItem (with ownership field), CurrencyEntry (per character and party pool, with denomination), and LedgerEntry tables. Each LedgerEntry records type, timestamp, source/target entity, items and currency involved, and actor user ID.
+
+Campaign & ledger API — Extend the OpenAPI spec with endpoints for: campaign CRUD, invite code generation/redemption, campaign membership management, party inventory (list/add/remove/transfer items), party currency pool operations, ledger entry listing with filters, and the coin-split helper endpoint. Run codegen.
+
+Campaign backend routes — Implement all campaign and party ledger route handlers with proper access control (only campaign members can read; only DM or item owner can modify).
+
+Campaign & party frontend — Build the campaign dashboard (member cards with key stats, quick-link to sheets), Party Inventory tab (item list with ownership, party currency pool, transfer actions), and Transaction History tab. Wire all views to live API data.
+
+Relevant files
+lib/api-spec/openapi.yaml
+lib/db/src/schema/index.ts
+artifacts/api-server/src/routes/index.ts
+lib/api-client-react/src/generated/api.ts
+Dependencies
