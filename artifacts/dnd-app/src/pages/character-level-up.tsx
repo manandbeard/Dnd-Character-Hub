@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useGetCharacter, useLevelUpCharacter, getGetCharacterQueryKey, getListCharactersQueryKey } from "@workspace/api-client-react";
+import { useGetCharacter, useLevelUpCharacter, useListClasses, getGetCharacterQueryKey, getListCharactersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dice6 } from "lucide-react";
@@ -28,15 +28,15 @@ export default function CharacterLevelUp({ id }: Props) {
   const { data: character, isLoading } = useGetCharacter(id, {
     query: { queryKey: getGetCharacterQueryKey(id) },
   });
+  const { data: classes } = useListClasses();
   const levelUp = useLevelUpCharacter();
 
-  const [hpIncrease, setHpIncrease] = useState<number>(4);
+  const hitDie = classes?.find((c) => c.slug === character?.class)?.hitDie ?? 8;
+  const [hpIncrease, setHpIncrease] = useState<number>(Math.ceil(hitDie / 2));
   const [asiPoints, setAsiPoints] = useState<Record<string, number>>({});
 
-  // Determine hit die from a reasonable default based on class
   function rollHp() {
-    // Without knowing hit die we use d8 as a common average
-    const roll = Math.floor(Math.random() * 8) + 1;
+    const roll = Math.floor(Math.random() * hitDie) + 1;
     setHpIncrease(roll);
   }
 
@@ -114,7 +114,7 @@ export default function CharacterLevelUp({ id }: Props) {
                 <div className="mt-5">
                   <Button variant="outline" size="sm" onClick={rollHp} data-testid="button-roll-hp">
                     <Dice6 className="w-4 h-4 mr-1.5" />
-                    Roll d8
+                    Roll d{hitDie}
                   </Button>
                 </div>
                 <div className="mt-5 text-sm text-muted-foreground">

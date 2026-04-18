@@ -295,6 +295,19 @@ router.post("/characters/:id/level-up", requireAuth, async (req, res): Promise<v
   }
 
   const data = parsed.data;
+
+  // Validate hpIncrease against class hit die
+  const levelUpClassData = await getClassBySlug(existing.class);
+  const hitDie = levelUpClassData?.hitDie ?? 8;
+  if (data.hpIncrease !== undefined && data.hpIncrease !== null) {
+    if (data.hpIncrease < 1 || data.hpIncrease > hitDie) {
+      res.status(400).json({
+        error: `HP increase must be between 1 and ${hitDie} for ${levelUpClassData?.name ?? existing.class} (d${hitDie}).`,
+      });
+      return;
+    }
+  }
+
   const constitutionMod = computeAbilityModifier(existing.constitution);
   const hpGain = Math.max(1, (data.hpIncrease ?? 1)) + constitutionMod;
   const newMaxHp = existing.maxHp + hpGain;
