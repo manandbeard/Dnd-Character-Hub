@@ -26,6 +26,12 @@ tags:
     description: SRD item reference data
   - name: inventory
     description: Character inventory operations
+  - name: campaigns
+    description: Campaign management and membership
+  - name: party-inventory
+    description: Party shared item stash and currency pool
+  - name: party-ledger
+    description: Campaign transaction history
 
 paths:
   /healthz:
@@ -729,6 +735,727 @@ paths:
                 $ref: "#/components/schemas/ItemRef"
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Campaigns ────────────────────────────────────────────────────────────────
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [campaigns]
+      summary: List campaigns the user belongs to
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createCampaign
+      tags: [campaigns]
+      summary: Create a new campaign (caller becomes DM)
+      security:
+        - clerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCampaignBody"
+      responses:
+        "201":
+          description: Created campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/join:
+    post:
+      operationId: joinCampaign
+      tags: [campaigns]
+      summary: Join a campaign via invite code
+      security:
+        - clerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinCampaignBody"
+      responses:
+        "200":
+          description: Joined campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          description: Invalid invite code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}:
+    get:
+      operationId: getCampaign
+      tags: [campaigns]
+      summary: Get campaign details
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignDetail"
+        "403":
+          description: Not a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateCampaign
+      tags: [campaigns]
+      summary: Update campaign name/description (DM only)
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCampaignBody"
+      responses:
+        "200":
+          description: Updated campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "403":
+          description: Not DM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteCampaign
+      tags: [campaigns]
+      summary: Delete campaign (DM only)
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Not DM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/invite/refresh:
+    post:
+      operationId: refreshInviteCode
+      tags: [campaigns]
+      summary: Generate a new invite code (DM only)
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated invite code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inviteCode:
+                    type: string
+                required:
+                  - inviteCode
+        "403":
+          description: Not DM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/members/{userId}:
+    delete:
+      operationId: removeCampaignMember
+      tags: [campaigns]
+      summary: Remove a member from the campaign (DM only)
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Removed
+        "403":
+          description: Not DM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Member not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/characters:
+    get:
+      operationId: listCampaignCharacters
+      tags: [campaigns]
+      summary: List characters attached to the campaign
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of characters with derived stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CharacterWithDerived"
+        "403":
+          description: Not a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: attachCharacterToCampaign
+      tags: [campaigns]
+      summary: Attach one of your characters to the campaign
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                characterId:
+                  type: integer
+              required:
+                - characterId
+      responses:
+        "201":
+          description: Character attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CharacterWithDerived"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/characters/{characterId}:
+    delete:
+      operationId: detachCharacterFromCampaign
+      tags: [campaigns]
+      summary: Detach a character from the campaign
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: characterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Detached
+        "403":
+          description: Not owner or DM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Party Inventory ────────────────────────────────────────────────────────
+  /campaigns/{id}/party-items:
+    get:
+      operationId: listPartyItems
+      tags: [party-inventory]
+      summary: List all items in the party stash
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: claimedByCharacterId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Party stash items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartyItem"
+        "403":
+          description: Not a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: addPartyItem
+      tags: [party-inventory]
+      summary: Add an item to the party stash
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPartyItemBody"
+      responses:
+        "201":
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/party-items/{itemId}:
+    patch:
+      operationId: updatePartyItem
+      tags: [party-inventory]
+      summary: Update a party stash item (quantity, notes)
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePartyItemBody"
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyItem"
+        "403":
+          description: Not DM or item claimer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removePartyItem
+      tags: [party-inventory]
+      summary: Remove an item from the party stash
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+        "403":
+          description: Not DM or item claimer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/party-items/{itemId}/transfer:
+    post:
+      operationId: transferPartyItem
+      tags: [party-inventory]
+      summary: Transfer an item between party stash and a character inventory
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferPartyItemBody"
+      responses:
+        "200":
+          description: Transfer recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerEntry"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not DM or item claimer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Party Currency ─────────────────────────────────────────────────────────
+  /campaigns/{id}/currency/deposit:
+    post:
+      operationId: depositCurrency
+      tags: [party-inventory]
+      summary: Deposit coins into the party pool
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrencyDeltaBody"
+      responses:
+        "200":
+          description: Updated party currency pool
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyCurrency"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/currency/withdraw:
+    post:
+      operationId: withdrawCurrency
+      tags: [party-inventory]
+      summary: Withdraw coins from the party pool
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrencyDeltaBody"
+      responses:
+        "200":
+          description: Updated party currency pool
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartyCurrency"
+        "400":
+          description: Insufficient funds or validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /campaigns/{id}/currency/split:
+    post:
+      operationId: splitCurrency
+      tags: [party-inventory]
+      summary: Split party pool evenly among all active party members
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+              required: []
+      responses:
+        "200":
+          description: Coin split result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoinSplitResult"
+        "400":
+          description: No members or empty pool
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not DM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Party Ledger ───────────────────────────────────────────────────────────
+  /campaigns/{id}/ledger:
+    get:
+      operationId: listLedgerEntries
+      tags: [party-ledger]
+      summary: Get the transaction history for a campaign
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: characterId
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Ledger entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LedgerEntry"
+        "403":
+          description: Not a member
           content:
             application/json:
               schema:
@@ -1590,3 +2317,346 @@ components:
         - cost
         - properties
         - rawData
+
+    # ── Campaigns ─────────────────────────────────────────────────────────────
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        inviteCode:
+          type: string
+        dmUserId:
+          type: string
+        cp:
+          type: integer
+        sp:
+          type: integer
+        ep:
+          type: integer
+        gp:
+          type: integer
+        pp:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - description
+        - inviteCode
+        - dmUserId
+        - cp
+        - sp
+        - ep
+        - gp
+        - pp
+        - createdAt
+        - updatedAt
+
+    CampaignMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        campaignId:
+          type: integer
+        userId:
+          type: string
+        role:
+          type: string
+          enum: [dm, player]
+        name:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        joinedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - campaignId
+        - userId
+        - role
+        - joinedAt
+
+    CampaignDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        inviteCode:
+          type: string
+        dmUserId:
+          type: string
+        cp:
+          type: integer
+        sp:
+          type: integer
+        ep:
+          type: integer
+        gp:
+          type: integer
+        pp:
+          type: integer
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/CampaignMember"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - description
+        - inviteCode
+        - dmUserId
+        - cp
+        - sp
+        - ep
+        - gp
+        - pp
+        - members
+        - createdAt
+        - updatedAt
+
+    CreateCampaignBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+      required:
+        - name
+
+    UpdateCampaignBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+
+    JoinCampaignBody:
+      type: object
+      properties:
+        inviteCode:
+          type: string
+          minLength: 1
+      required:
+        - inviteCode
+
+    PartyItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        campaignId:
+          type: integer
+        itemSlug:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+        isCustom:
+          type: boolean
+        claimedByCharacterId:
+          type: ["integer", "null"]
+        notes:
+          type: string
+        customProperties:
+          type: object
+        addedByUserId:
+          type: string
+        addedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - campaignId
+        - itemSlug
+        - name
+        - quantity
+        - isCustom
+        - notes
+        - customProperties
+        - addedByUserId
+        - addedAt
+        - updatedAt
+
+    AddPartyItemBody:
+      type: object
+      properties:
+        itemSlug:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        isCustom:
+          type: boolean
+        claimedByCharacterId:
+          type: ["integer", "null"]
+        notes:
+          type: string
+        customProperties:
+          type: object
+      required:
+        - itemSlug
+        - name
+
+    UpdatePartyItemBody:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+        claimedByCharacterId:
+          type: ["integer", "null"]
+
+    TransferPartyItemBody:
+      type: object
+      properties:
+        direction:
+          type: string
+          enum: [to_character, to_party]
+        characterId:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+      required:
+        - direction
+        - characterId
+
+    PartyCurrency:
+      type: object
+      properties:
+        cp:
+          type: integer
+        sp:
+          type: integer
+        ep:
+          type: integer
+        gp:
+          type: integer
+        pp:
+          type: integer
+      required:
+        - cp
+        - sp
+        - ep
+        - gp
+        - pp
+
+    CurrencyDeltaBody:
+      type: object
+      properties:
+        cp:
+          type: integer
+        sp:
+          type: integer
+        ep:
+          type: integer
+        gp:
+          type: integer
+        pp:
+          type: integer
+        characterId:
+          type: ["integer", "null"]
+        notes:
+          type: string
+
+    CoinSplitResult:
+      type: object
+      properties:
+        perMember:
+          $ref: "#/components/schemas/PartyCurrency"
+        remainder:
+          $ref: "#/components/schemas/PartyCurrency"
+        memberCount:
+          type: integer
+      required:
+        - perMember
+        - remainder
+        - memberCount
+
+    LedgerEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        campaignId:
+          type: integer
+        type:
+          type: string
+        actorUserId:
+          type: string
+        characterId:
+          type: ["integer", "null"]
+        cpDelta:
+          type: integer
+        spDelta:
+          type: integer
+        epDelta:
+          type: integer
+        gpDelta:
+          type: integer
+        ppDelta:
+          type: integer
+        itemName:
+          type: ["string", "null"]
+        itemQuantity:
+          type: ["integer", "null"]
+        notes:
+          type: string
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - campaignId
+        - type
+        - actorUserId
+        - cpDelta
+        - spDelta
+        - epDelta
+        - gpDelta
+        - ppDelta
+        - notes
+        - metadata
+        - createdAt

@@ -383,6 +383,186 @@ export interface ItemRef {
   rawData: ItemRefRawData;
 }
 
+export interface Campaign {
+  id: number;
+  name: string;
+  description: string;
+  inviteCode: string;
+  dmUserId: string;
+  cp: number;
+  sp: number;
+  ep: number;
+  gp: number;
+  pp: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CampaignMemberRole =
+  (typeof CampaignMemberRole)[keyof typeof CampaignMemberRole];
+
+export const CampaignMemberRole = {
+  dm: "dm",
+  player: "player",
+} as const;
+
+export interface CampaignMember {
+  id: number;
+  campaignId: number;
+  userId: string;
+  role: CampaignMemberRole;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  joinedAt: string;
+}
+
+export interface CampaignDetail {
+  id: number;
+  name: string;
+  description: string;
+  inviteCode: string;
+  dmUserId: string;
+  cp: number;
+  sp: number;
+  ep: number;
+  gp: number;
+  pp: number;
+  members: CampaignMember[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCampaignBody {
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @maxLength 500 */
+  description?: string;
+}
+
+export interface UpdateCampaignBody {
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name?: string;
+  /** @maxLength 500 */
+  description?: string;
+}
+
+export interface JoinCampaignBody {
+  /** @minLength 1 */
+  inviteCode: string;
+}
+
+export type PartyItemCustomProperties = { [key: string]: unknown };
+
+export interface PartyItem {
+  id: number;
+  campaignId: number;
+  itemSlug: string;
+  name: string;
+  quantity: number;
+  isCustom: boolean;
+  /** @nullable */
+  claimedByCharacterId?: number | null;
+  notes: string;
+  customProperties: PartyItemCustomProperties;
+  addedByUserId: string;
+  addedAt: string;
+  updatedAt: string;
+}
+
+export type AddPartyItemBodyCustomProperties = { [key: string]: unknown };
+
+export interface AddPartyItemBody {
+  itemSlug: string;
+  name: string;
+  /** @minimum 1 */
+  quantity?: number;
+  isCustom?: boolean;
+  /** @nullable */
+  claimedByCharacterId?: number | null;
+  notes?: string;
+  customProperties?: AddPartyItemBodyCustomProperties;
+}
+
+export interface UpdatePartyItemBody {
+  /** @minimum 1 */
+  quantity?: number;
+  notes?: string;
+  /** @nullable */
+  claimedByCharacterId?: number | null;
+}
+
+export type TransferPartyItemBodyDirection =
+  (typeof TransferPartyItemBodyDirection)[keyof typeof TransferPartyItemBodyDirection];
+
+export const TransferPartyItemBodyDirection = {
+  to_character: "to_character",
+  to_party: "to_party",
+} as const;
+
+export interface TransferPartyItemBody {
+  direction: TransferPartyItemBodyDirection;
+  characterId: number;
+  /** @minimum 1 */
+  quantity?: number;
+  notes?: string;
+}
+
+export interface PartyCurrency {
+  cp: number;
+  sp: number;
+  ep: number;
+  gp: number;
+  pp: number;
+}
+
+export interface CurrencyDeltaBody {
+  cp?: number;
+  sp?: number;
+  ep?: number;
+  gp?: number;
+  pp?: number;
+  /** @nullable */
+  characterId?: number | null;
+  notes?: string;
+}
+
+export interface CoinSplitResult {
+  perMember: PartyCurrency;
+  remainder: PartyCurrency;
+  memberCount: number;
+}
+
+export type LedgerEntryMetadata = { [key: string]: unknown };
+
+export interface LedgerEntry {
+  id: number;
+  campaignId: number;
+  type: string;
+  actorUserId: string;
+  /** @nullable */
+  characterId?: number | null;
+  cpDelta: number;
+  spDelta: number;
+  epDelta: number;
+  gpDelta: number;
+  ppDelta: number;
+  /** @nullable */
+  itemName?: string | null;
+  /** @nullable */
+  itemQuantity?: number | null;
+  notes: string;
+  metadata: LedgerEntryMetadata;
+  createdAt: string;
+}
+
 export type ListSpellsParams = {
   class?: string;
   level?: number;
@@ -394,4 +574,28 @@ export type ListItemsParams = {
   type?: string;
   rarity?: string;
   search?: string;
+};
+
+export type RefreshInviteCode200 = {
+  inviteCode: string;
+};
+
+export type AttachCharacterToCampaignBody = {
+  characterId: number;
+};
+
+export type ListPartyItemsParams = {
+  search?: string;
+  claimedByCharacterId?: number;
+};
+
+export type SplitCurrencyBody = {
+  notes?: string;
+};
+
+export type ListLedgerEntriesParams = {
+  type?: string;
+  characterId?: number;
+  limit?: number;
+  offset?: number;
 };

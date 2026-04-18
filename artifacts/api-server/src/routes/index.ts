@@ -8,6 +8,7 @@ import classesRouter from "./classes";
 import backgroundsRouter from "./backgrounds";
 import spellsRouter from "./spells";
 import itemsRouter from "./items";
+import campaignsRouter from "./campaigns";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(classesRouter);
 router.use(backgroundsRouter);
 router.use(spellsRouter);
 router.use(itemsRouter);
+router.use(campaignsRouter);
 
 export default router;

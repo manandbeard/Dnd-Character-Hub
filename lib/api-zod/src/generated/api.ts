@@ -884,3 +884,505 @@ export const GetItemResponse = zod.object({
   description: zod.string().nullish(),
   rawData: zod.object({}).passthrough(),
 });
+
+/**
+ * @summary List campaigns the user belongs to
+ */
+export const ListCampaignsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  inviteCode: zod.string(),
+  dmUserId: zod.string(),
+  cp: zod.number(),
+  sp: zod.number(),
+  ep: zod.number(),
+  gp: zod.number(),
+  pp: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListCampaignsResponse = zod.array(ListCampaignsResponseItem);
+
+/**
+ * @summary Create a new campaign (caller becomes DM)
+ */
+export const createCampaignBodyNameMax = 100;
+
+export const createCampaignBodyDescriptionMax = 500;
+
+export const CreateCampaignBody = zod.object({
+  name: zod.string().min(1).max(createCampaignBodyNameMax),
+  description: zod.string().max(createCampaignBodyDescriptionMax).optional(),
+});
+
+/**
+ * @summary Join a campaign via invite code
+ */
+
+export const JoinCampaignBody = zod.object({
+  inviteCode: zod.string().min(1),
+});
+
+export const JoinCampaignResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  inviteCode: zod.string(),
+  dmUserId: zod.string(),
+  cp: zod.number(),
+  sp: zod.number(),
+  ep: zod.number(),
+  gp: zod.number(),
+  pp: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get campaign details
+ */
+export const GetCampaignParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCampaignResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  inviteCode: zod.string(),
+  dmUserId: zod.string(),
+  cp: zod.number(),
+  sp: zod.number(),
+  ep: zod.number(),
+  gp: zod.number(),
+  pp: zod.number(),
+  members: zod.array(
+    zod.object({
+      id: zod.number(),
+      campaignId: zod.number(),
+      userId: zod.string(),
+      role: zod.enum(["dm", "player"]),
+      name: zod.string().nullish(),
+      avatarUrl: zod.string().nullish(),
+      joinedAt: zod.coerce.date(),
+    }),
+  ),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update campaign name/description (DM only)
+ */
+export const UpdateCampaignParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updateCampaignBodyNameMax = 100;
+
+export const updateCampaignBodyDescriptionMax = 500;
+
+export const UpdateCampaignBody = zod.object({
+  name: zod.string().min(1).max(updateCampaignBodyNameMax).optional(),
+  description: zod.string().max(updateCampaignBodyDescriptionMax).optional(),
+});
+
+export const UpdateCampaignResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  inviteCode: zod.string(),
+  dmUserId: zod.string(),
+  cp: zod.number(),
+  sp: zod.number(),
+  ep: zod.number(),
+  gp: zod.number(),
+  pp: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete campaign (DM only)
+ */
+export const DeleteCampaignParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Generate a new invite code (DM only)
+ */
+export const RefreshInviteCodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const RefreshInviteCodeResponse = zod.object({
+  inviteCode: zod.string(),
+});
+
+/**
+ * @summary Remove a member from the campaign (DM only)
+ */
+export const RemoveCampaignMemberParams = zod.object({
+  id: zod.coerce.number(),
+  userId: zod.coerce.string(),
+});
+
+/**
+ * @summary List characters attached to the campaign
+ */
+export const ListCampaignCharactersParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListCampaignCharactersResponseItem = zod
+  .object({
+    id: zod.number(),
+    userId: zod.string(),
+    name: zod.string(),
+    race: zod.string(),
+    subrace: zod.string().nullish(),
+    class: zod.string(),
+    subclass: zod.string().nullish(),
+    background: zod.string(),
+    alignment: zod.string(),
+    level: zod.number(),
+    experience: zod.number(),
+    inspiration: zod.boolean(),
+    strength: zod.number(),
+    dexterity: zod.number(),
+    constitution: zod.number(),
+    intelligence: zod.number(),
+    wisdom: zod.number(),
+    charisma: zod.number(),
+    maxHp: zod.number(),
+    currentHp: zod.number(),
+    temporaryHp: zod.number(),
+    armorClass: zod.number(),
+    speed: zod.number(),
+    initiativeBonus: zod.number(),
+    skillProficiencies: zod.array(zod.string()),
+    savingThrowProficiencies: zod.array(zod.string()),
+    toolProficiencies: zod.array(zod.string()),
+    weaponProficiencies: zod.array(zod.string()),
+    armorProficiencies: zod.array(zod.string()),
+    languageProficiencies: zod.array(zod.string()),
+    deathSaveSuccesses: zod.number(),
+    deathSaveFailures: zod.number(),
+    spellcastingAbility: zod.string().nullish(),
+    preparedSpells: zod.array(zod.string()),
+    knownSpells: zod.array(zod.string()),
+    spellSlots: zod.record(
+      zod.string(),
+      zod.object({
+        max: zod.number().optional(),
+        used: zod.number().optional(),
+      }),
+    ),
+    cp: zod.number(),
+    sp: zod.number(),
+    ep: zod.number(),
+    gp: zod.number(),
+    pp: zod.number(),
+    personalityTraits: zod.string(),
+    ideals: zod.string(),
+    bonds: zod.string(),
+    flaws: zod.string(),
+    backstory: zod.string(),
+    notes: zod.string(),
+    appearance: zod.string(),
+    features: zod.array(zod.object({}).passthrough()),
+    conditions: zod.array(zod.string()),
+    avatarUrl: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      derived: zod.object({
+        proficiencyBonus: zod.number(),
+        strengthMod: zod.number(),
+        dexterityMod: zod.number(),
+        constitutionMod: zod.number(),
+        intelligenceMod: zod.number(),
+        wisdomMod: zod.number(),
+        charismaMod: zod.number(),
+        skills: zod.record(
+          zod.string(),
+          zod.object({
+            mod: zod.number().optional(),
+            proficient: zod.boolean().optional(),
+          }),
+        ),
+        savingThrows: zod.record(
+          zod.string(),
+          zod.object({
+            mod: zod.number().optional(),
+            proficient: zod.boolean().optional(),
+          }),
+        ),
+        passivePerception: zod.number(),
+        passiveInsight: zod.number(),
+        passiveInvestigation: zod.number(),
+        spellSaveDC: zod.number().nullish(),
+        spellAttackBonus: zod.number().nullish(),
+        initiative: zod.number(),
+        carryCapacity: zod.number(),
+      }),
+    }),
+  );
+export const ListCampaignCharactersResponse = zod.array(
+  ListCampaignCharactersResponseItem,
+);
+
+/**
+ * @summary Attach one of your characters to the campaign
+ */
+export const AttachCharacterToCampaignParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AttachCharacterToCampaignBody = zod.object({
+  characterId: zod.number(),
+});
+
+/**
+ * @summary Detach a character from the campaign
+ */
+export const DetachCharacterFromCampaignParams = zod.object({
+  id: zod.coerce.number(),
+  characterId: zod.coerce.number(),
+});
+
+/**
+ * @summary List all items in the party stash
+ */
+export const ListPartyItemsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListPartyItemsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  claimedByCharacterId: zod.coerce.number().optional(),
+});
+
+export const ListPartyItemsResponseItem = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  itemSlug: zod.string(),
+  name: zod.string(),
+  quantity: zod.number(),
+  isCustom: zod.boolean(),
+  claimedByCharacterId: zod.number().nullish(),
+  notes: zod.string(),
+  customProperties: zod.object({}).passthrough(),
+  addedByUserId: zod.string(),
+  addedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListPartyItemsResponse = zod.array(ListPartyItemsResponseItem);
+
+/**
+ * @summary Add an item to the party stash
+ */
+export const AddPartyItemParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddPartyItemBody = zod.object({
+  itemSlug: zod.string(),
+  name: zod.string(),
+  quantity: zod.number().min(1).optional(),
+  isCustom: zod.boolean().optional(),
+  claimedByCharacterId: zod.number().nullish(),
+  notes: zod.string().optional(),
+  customProperties: zod.object({}).passthrough().optional(),
+});
+
+/**
+ * @summary Update a party stash item (quantity, notes)
+ */
+export const UpdatePartyItemParams = zod.object({
+  id: zod.coerce.number(),
+  itemId: zod.coerce.number(),
+});
+
+export const UpdatePartyItemBody = zod.object({
+  quantity: zod.number().min(1).optional(),
+  notes: zod.string().optional(),
+  claimedByCharacterId: zod.number().nullish(),
+});
+
+export const UpdatePartyItemResponse = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  itemSlug: zod.string(),
+  name: zod.string(),
+  quantity: zod.number(),
+  isCustom: zod.boolean(),
+  claimedByCharacterId: zod.number().nullish(),
+  notes: zod.string(),
+  customProperties: zod.object({}).passthrough(),
+  addedByUserId: zod.string(),
+  addedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Remove an item from the party stash
+ */
+export const RemovePartyItemParams = zod.object({
+  id: zod.coerce.number(),
+  itemId: zod.coerce.number(),
+});
+
+/**
+ * @summary Transfer an item between party stash and a character inventory
+ */
+export const TransferPartyItemParams = zod.object({
+  id: zod.coerce.number(),
+  itemId: zod.coerce.number(),
+});
+
+export const TransferPartyItemBody = zod.object({
+  direction: zod.enum(["to_character", "to_party"]),
+  characterId: zod.number(),
+  quantity: zod.number().min(1).optional(),
+  notes: zod.string().optional(),
+});
+
+export const TransferPartyItemResponse = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  type: zod.string(),
+  actorUserId: zod.string(),
+  characterId: zod.number().nullish(),
+  cpDelta: zod.number(),
+  spDelta: zod.number(),
+  epDelta: zod.number(),
+  gpDelta: zod.number(),
+  ppDelta: zod.number(),
+  itemName: zod.string().nullish(),
+  itemQuantity: zod.number().nullish(),
+  notes: zod.string(),
+  metadata: zod.object({}).passthrough(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Deposit coins into the party pool
+ */
+export const DepositCurrencyParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DepositCurrencyBody = zod.object({
+  cp: zod.number().optional(),
+  sp: zod.number().optional(),
+  ep: zod.number().optional(),
+  gp: zod.number().optional(),
+  pp: zod.number().optional(),
+  characterId: zod.number().nullish(),
+  notes: zod.string().optional(),
+});
+
+export const DepositCurrencyResponse = zod.object({
+  cp: zod.number(),
+  sp: zod.number(),
+  ep: zod.number(),
+  gp: zod.number(),
+  pp: zod.number(),
+});
+
+/**
+ * @summary Withdraw coins from the party pool
+ */
+export const WithdrawCurrencyParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const WithdrawCurrencyBody = zod.object({
+  cp: zod.number().optional(),
+  sp: zod.number().optional(),
+  ep: zod.number().optional(),
+  gp: zod.number().optional(),
+  pp: zod.number().optional(),
+  characterId: zod.number().nullish(),
+  notes: zod.string().optional(),
+});
+
+export const WithdrawCurrencyResponse = zod.object({
+  cp: zod.number(),
+  sp: zod.number(),
+  ep: zod.number(),
+  gp: zod.number(),
+  pp: zod.number(),
+});
+
+/**
+ * @summary Split party pool evenly among all active party members
+ */
+export const SplitCurrencyParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SplitCurrencyBody = zod.object({
+  notes: zod.string().optional(),
+});
+
+export const SplitCurrencyResponse = zod.object({
+  perMember: zod.object({
+    cp: zod.number(),
+    sp: zod.number(),
+    ep: zod.number(),
+    gp: zod.number(),
+    pp: zod.number(),
+  }),
+  remainder: zod.object({
+    cp: zod.number(),
+    sp: zod.number(),
+    ep: zod.number(),
+    gp: zod.number(),
+    pp: zod.number(),
+  }),
+  memberCount: zod.number(),
+});
+
+/**
+ * @summary Get the transaction history for a campaign
+ */
+export const ListLedgerEntriesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const listLedgerEntriesQueryLimitDefault = 50;
+export const listLedgerEntriesQueryOffsetDefault = 0;
+
+export const ListLedgerEntriesQueryParams = zod.object({
+  type: zod.coerce.string().optional(),
+  characterId: zod.coerce.number().optional(),
+  limit: zod.coerce.number().default(listLedgerEntriesQueryLimitDefault),
+  offset: zod.coerce.number().default(listLedgerEntriesQueryOffsetDefault),
+});
+
+export const ListLedgerEntriesResponseItem = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  type: zod.string(),
+  actorUserId: zod.string(),
+  characterId: zod.number().nullish(),
+  cpDelta: zod.number(),
+  spDelta: zod.number(),
+  epDelta: zod.number(),
+  gpDelta: zod.number(),
+  ppDelta: zod.number(),
+  itemName: zod.string().nullish(),
+  itemQuantity: zod.number().nullish(),
+  notes: zod.string(),
+  metadata: zod.object({}).passthrough(),
+  createdAt: zod.coerce.date(),
+});
+export const ListLedgerEntriesResponse = zod.array(
+  ListLedgerEntriesResponseItem,
+);

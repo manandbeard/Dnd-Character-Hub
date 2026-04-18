@@ -18,23 +18,41 @@ import type {
 
 import type {
   AddInventoryItemBody,
+  AddPartyItemBody,
+  AttachCharacterToCampaignBody,
   BackgroundRef,
+  Campaign,
+  CampaignDetail,
   Character,
   CharacterWithDerived,
   ClassRef,
+  CoinSplitResult,
+  CreateCampaignBody,
   CreateCharacterBody,
+  CurrencyDeltaBody,
   DerivedStats,
   Error,
   HealthStatus,
   InventoryItem,
   ItemRef,
+  JoinCampaignBody,
+  LedgerEntry,
   LevelUpBody,
   ListItemsParams,
+  ListLedgerEntriesParams,
+  ListPartyItemsParams,
   ListSpellsParams,
+  PartyCurrency,
+  PartyItem,
   RaceRef,
+  RefreshInviteCode200,
   SpellRef,
+  SplitCurrencyBody,
+  TransferPartyItemBody,
+  UpdateCampaignBody,
   UpdateCharacterBody,
   UpdateInventoryItemBody,
+  UpdatePartyItemBody,
   UpdateUserBody,
   User,
 } from "./api.schemas";
@@ -2022,6 +2040,1778 @@ export function useGetItem<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetItemQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List campaigns the user belongs to
+ */
+export const getListCampaignsUrl = () => {
+  return `/api/campaigns`;
+};
+
+export const listCampaigns = async (
+  options?: RequestInit,
+): Promise<Campaign[]> => {
+  return customFetch<Campaign[]>(getListCampaignsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCampaignsQueryKey = () => {
+  return [`/api/campaigns`] as const;
+};
+
+export const getListCampaignsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCampaigns>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCampaigns>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCampaignsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCampaigns>>> = ({
+    signal,
+  }) => listCampaigns({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCampaigns>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCampaignsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCampaigns>>
+>;
+export type ListCampaignsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List campaigns the user belongs to
+ */
+
+export function useListCampaigns<
+  TData = Awaited<ReturnType<typeof listCampaigns>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCampaigns>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCampaignsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new campaign (caller becomes DM)
+ */
+export const getCreateCampaignUrl = () => {
+  return `/api/campaigns`;
+};
+
+export const createCampaign = async (
+  createCampaignBody: CreateCampaignBody,
+  options?: RequestInit,
+): Promise<Campaign> => {
+  return customFetch<Campaign>(getCreateCampaignUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCampaignBody),
+  });
+};
+
+export const getCreateCampaignMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCampaign>>,
+    TError,
+    { data: BodyType<CreateCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCampaign>>,
+  TError,
+  { data: BodyType<CreateCampaignBody> },
+  TContext
+> => {
+  const mutationKey = ["createCampaign"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCampaign>>,
+    { data: BodyType<CreateCampaignBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCampaign(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCampaignMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCampaign>>
+>;
+export type CreateCampaignMutationBody = BodyType<CreateCampaignBody>;
+export type CreateCampaignMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a new campaign (caller becomes DM)
+ */
+export const useCreateCampaign = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCampaign>>,
+    TError,
+    { data: BodyType<CreateCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCampaign>>,
+  TError,
+  { data: BodyType<CreateCampaignBody> },
+  TContext
+> => {
+  return useMutation(getCreateCampaignMutationOptions(options));
+};
+
+/**
+ * @summary Join a campaign via invite code
+ */
+export const getJoinCampaignUrl = () => {
+  return `/api/campaigns/join`;
+};
+
+export const joinCampaign = async (
+  joinCampaignBody: JoinCampaignBody,
+  options?: RequestInit,
+): Promise<Campaign> => {
+  return customFetch<Campaign>(getJoinCampaignUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(joinCampaignBody),
+  });
+};
+
+export const getJoinCampaignMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof joinCampaign>>,
+    TError,
+    { data: BodyType<JoinCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof joinCampaign>>,
+  TError,
+  { data: BodyType<JoinCampaignBody> },
+  TContext
+> => {
+  const mutationKey = ["joinCampaign"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof joinCampaign>>,
+    { data: BodyType<JoinCampaignBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return joinCampaign(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type JoinCampaignMutationResult = NonNullable<
+  Awaited<ReturnType<typeof joinCampaign>>
+>;
+export type JoinCampaignMutationBody = BodyType<JoinCampaignBody>;
+export type JoinCampaignMutationError = ErrorType<Error>;
+
+/**
+ * @summary Join a campaign via invite code
+ */
+export const useJoinCampaign = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof joinCampaign>>,
+    TError,
+    { data: BodyType<JoinCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof joinCampaign>>,
+  TError,
+  { data: BodyType<JoinCampaignBody> },
+  TContext
+> => {
+  return useMutation(getJoinCampaignMutationOptions(options));
+};
+
+/**
+ * @summary Get campaign details
+ */
+export const getGetCampaignUrl = (id: number) => {
+  return `/api/campaigns/${id}`;
+};
+
+export const getCampaign = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CampaignDetail> => {
+  return customFetch<CampaignDetail>(getGetCampaignUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCampaignQueryKey = (id: number) => {
+  return [`/api/campaigns/${id}`] as const;
+};
+
+export const getGetCampaignQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCampaign>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCampaign>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCampaignQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCampaign>>> = ({
+    signal,
+  }) => getCampaign(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCampaign>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCampaignQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCampaign>>
+>;
+export type GetCampaignQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get campaign details
+ */
+
+export function useGetCampaign<
+  TData = Awaited<ReturnType<typeof getCampaign>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCampaign>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCampaignQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update campaign name/description (DM only)
+ */
+export const getUpdateCampaignUrl = (id: number) => {
+  return `/api/campaigns/${id}`;
+};
+
+export const updateCampaign = async (
+  id: number,
+  updateCampaignBody: UpdateCampaignBody,
+  options?: RequestInit,
+): Promise<Campaign> => {
+  return customFetch<Campaign>(getUpdateCampaignUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCampaignBody),
+  });
+};
+
+export const getUpdateCampaignMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCampaign>>,
+    TError,
+    { id: number; data: BodyType<UpdateCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCampaign>>,
+  TError,
+  { id: number; data: BodyType<UpdateCampaignBody> },
+  TContext
+> => {
+  const mutationKey = ["updateCampaign"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCampaign>>,
+    { id: number; data: BodyType<UpdateCampaignBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateCampaign(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCampaignMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCampaign>>
+>;
+export type UpdateCampaignMutationBody = BodyType<UpdateCampaignBody>;
+export type UpdateCampaignMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update campaign name/description (DM only)
+ */
+export const useUpdateCampaign = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCampaign>>,
+    TError,
+    { id: number; data: BodyType<UpdateCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCampaign>>,
+  TError,
+  { id: number; data: BodyType<UpdateCampaignBody> },
+  TContext
+> => {
+  return useMutation(getUpdateCampaignMutationOptions(options));
+};
+
+/**
+ * @summary Delete campaign (DM only)
+ */
+export const getDeleteCampaignUrl = (id: number) => {
+  return `/api/campaigns/${id}`;
+};
+
+export const deleteCampaign = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteCampaignUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCampaignMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCampaign>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCampaign>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteCampaign"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCampaign>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteCampaign(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCampaignMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCampaign>>
+>;
+
+export type DeleteCampaignMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete campaign (DM only)
+ */
+export const useDeleteCampaign = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCampaign>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCampaign>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteCampaignMutationOptions(options));
+};
+
+/**
+ * @summary Generate a new invite code (DM only)
+ */
+export const getRefreshInviteCodeUrl = (id: number) => {
+  return `/api/campaigns/${id}/invite/refresh`;
+};
+
+export const refreshInviteCode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RefreshInviteCode200> => {
+  return customFetch<RefreshInviteCode200>(getRefreshInviteCodeUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRefreshInviteCodeMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshInviteCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof refreshInviteCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["refreshInviteCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof refreshInviteCode>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return refreshInviteCode(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RefreshInviteCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refreshInviteCode>>
+>;
+
+export type RefreshInviteCodeMutationError = ErrorType<Error>;
+
+/**
+ * @summary Generate a new invite code (DM only)
+ */
+export const useRefreshInviteCode = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshInviteCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof refreshInviteCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getRefreshInviteCodeMutationOptions(options));
+};
+
+/**
+ * @summary Remove a member from the campaign (DM only)
+ */
+export const getRemoveCampaignMemberUrl = (id: number, userId: string) => {
+  return `/api/campaigns/${id}/members/${userId}`;
+};
+
+export const removeCampaignMember = async (
+  id: number,
+  userId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getRemoveCampaignMemberUrl(id, userId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemoveCampaignMemberMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeCampaignMember>>,
+    TError,
+    { id: number; userId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeCampaignMember>>,
+  TError,
+  { id: number; userId: string },
+  TContext
+> => {
+  const mutationKey = ["removeCampaignMember"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeCampaignMember>>,
+    { id: number; userId: string }
+  > = (props) => {
+    const { id, userId } = props ?? {};
+
+    return removeCampaignMember(id, userId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveCampaignMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeCampaignMember>>
+>;
+
+export type RemoveCampaignMemberMutationError = ErrorType<Error>;
+
+/**
+ * @summary Remove a member from the campaign (DM only)
+ */
+export const useRemoveCampaignMember = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeCampaignMember>>,
+    TError,
+    { id: number; userId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeCampaignMember>>,
+  TError,
+  { id: number; userId: string },
+  TContext
+> => {
+  return useMutation(getRemoveCampaignMemberMutationOptions(options));
+};
+
+/**
+ * @summary List characters attached to the campaign
+ */
+export const getListCampaignCharactersUrl = (id: number) => {
+  return `/api/campaigns/${id}/characters`;
+};
+
+export const listCampaignCharacters = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CharacterWithDerived[]> => {
+  return customFetch<CharacterWithDerived[]>(getListCampaignCharactersUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCampaignCharactersQueryKey = (id: number) => {
+  return [`/api/campaigns/${id}/characters`] as const;
+};
+
+export const getListCampaignCharactersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCampaignCharacters>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCampaignCharacters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCampaignCharactersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCampaignCharacters>>
+  > = ({ signal }) => listCampaignCharacters(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCampaignCharacters>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCampaignCharactersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCampaignCharacters>>
+>;
+export type ListCampaignCharactersQueryError = ErrorType<Error>;
+
+/**
+ * @summary List characters attached to the campaign
+ */
+
+export function useListCampaignCharacters<
+  TData = Awaited<ReturnType<typeof listCampaignCharacters>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCampaignCharacters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCampaignCharactersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Attach one of your characters to the campaign
+ */
+export const getAttachCharacterToCampaignUrl = (id: number) => {
+  return `/api/campaigns/${id}/characters`;
+};
+
+export const attachCharacterToCampaign = async (
+  id: number,
+  attachCharacterToCampaignBody: AttachCharacterToCampaignBody,
+  options?: RequestInit,
+): Promise<CharacterWithDerived> => {
+  return customFetch<CharacterWithDerived>(
+    getAttachCharacterToCampaignUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(attachCharacterToCampaignBody),
+    },
+  );
+};
+
+export const getAttachCharacterToCampaignMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof attachCharacterToCampaign>>,
+    TError,
+    { id: number; data: BodyType<AttachCharacterToCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof attachCharacterToCampaign>>,
+  TError,
+  { id: number; data: BodyType<AttachCharacterToCampaignBody> },
+  TContext
+> => {
+  const mutationKey = ["attachCharacterToCampaign"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof attachCharacterToCampaign>>,
+    { id: number; data: BodyType<AttachCharacterToCampaignBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return attachCharacterToCampaign(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AttachCharacterToCampaignMutationResult = NonNullable<
+  Awaited<ReturnType<typeof attachCharacterToCampaign>>
+>;
+export type AttachCharacterToCampaignMutationBody =
+  BodyType<AttachCharacterToCampaignBody>;
+export type AttachCharacterToCampaignMutationError = ErrorType<Error>;
+
+/**
+ * @summary Attach one of your characters to the campaign
+ */
+export const useAttachCharacterToCampaign = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof attachCharacterToCampaign>>,
+    TError,
+    { id: number; data: BodyType<AttachCharacterToCampaignBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof attachCharacterToCampaign>>,
+  TError,
+  { id: number; data: BodyType<AttachCharacterToCampaignBody> },
+  TContext
+> => {
+  return useMutation(getAttachCharacterToCampaignMutationOptions(options));
+};
+
+/**
+ * @summary Detach a character from the campaign
+ */
+export const getDetachCharacterFromCampaignUrl = (
+  id: number,
+  characterId: number,
+) => {
+  return `/api/campaigns/${id}/characters/${characterId}`;
+};
+
+export const detachCharacterFromCampaign = async (
+  id: number,
+  characterId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDetachCharacterFromCampaignUrl(id, characterId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDetachCharacterFromCampaignMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof detachCharacterFromCampaign>>,
+    TError,
+    { id: number; characterId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof detachCharacterFromCampaign>>,
+  TError,
+  { id: number; characterId: number },
+  TContext
+> => {
+  const mutationKey = ["detachCharacterFromCampaign"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof detachCharacterFromCampaign>>,
+    { id: number; characterId: number }
+  > = (props) => {
+    const { id, characterId } = props ?? {};
+
+    return detachCharacterFromCampaign(id, characterId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DetachCharacterFromCampaignMutationResult = NonNullable<
+  Awaited<ReturnType<typeof detachCharacterFromCampaign>>
+>;
+
+export type DetachCharacterFromCampaignMutationError = ErrorType<Error>;
+
+/**
+ * @summary Detach a character from the campaign
+ */
+export const useDetachCharacterFromCampaign = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof detachCharacterFromCampaign>>,
+    TError,
+    { id: number; characterId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof detachCharacterFromCampaign>>,
+  TError,
+  { id: number; characterId: number },
+  TContext
+> => {
+  return useMutation(getDetachCharacterFromCampaignMutationOptions(options));
+};
+
+/**
+ * @summary List all items in the party stash
+ */
+export const getListPartyItemsUrl = (
+  id: number,
+  params?: ListPartyItemsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/campaigns/${id}/party-items?${stringifiedParams}`
+    : `/api/campaigns/${id}/party-items`;
+};
+
+export const listPartyItems = async (
+  id: number,
+  params?: ListPartyItemsParams,
+  options?: RequestInit,
+): Promise<PartyItem[]> => {
+  return customFetch<PartyItem[]>(getListPartyItemsUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPartyItemsQueryKey = (
+  id: number,
+  params?: ListPartyItemsParams,
+) => {
+  return [
+    `/api/campaigns/${id}/party-items`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPartyItemsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPartyItems>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  params?: ListPartyItemsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartyItems>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPartyItemsQueryKey(id, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPartyItems>>> = ({
+    signal,
+  }) => listPartyItems(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPartyItems>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPartyItemsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPartyItems>>
+>;
+export type ListPartyItemsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List all items in the party stash
+ */
+
+export function useListPartyItems<
+  TData = Awaited<ReturnType<typeof listPartyItems>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  params?: ListPartyItemsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPartyItems>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPartyItemsQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add an item to the party stash
+ */
+export const getAddPartyItemUrl = (id: number) => {
+  return `/api/campaigns/${id}/party-items`;
+};
+
+export const addPartyItem = async (
+  id: number,
+  addPartyItemBody: AddPartyItemBody,
+  options?: RequestInit,
+): Promise<PartyItem> => {
+  return customFetch<PartyItem>(getAddPartyItemUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addPartyItemBody),
+  });
+};
+
+export const getAddPartyItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPartyItem>>,
+    TError,
+    { id: number; data: BodyType<AddPartyItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addPartyItem>>,
+  TError,
+  { id: number; data: BodyType<AddPartyItemBody> },
+  TContext
+> => {
+  const mutationKey = ["addPartyItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addPartyItem>>,
+    { id: number; data: BodyType<AddPartyItemBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addPartyItem(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddPartyItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addPartyItem>>
+>;
+export type AddPartyItemMutationBody = BodyType<AddPartyItemBody>;
+export type AddPartyItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Add an item to the party stash
+ */
+export const useAddPartyItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPartyItem>>,
+    TError,
+    { id: number; data: BodyType<AddPartyItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addPartyItem>>,
+  TError,
+  { id: number; data: BodyType<AddPartyItemBody> },
+  TContext
+> => {
+  return useMutation(getAddPartyItemMutationOptions(options));
+};
+
+/**
+ * @summary Update a party stash item (quantity, notes)
+ */
+export const getUpdatePartyItemUrl = (id: number, itemId: number) => {
+  return `/api/campaigns/${id}/party-items/${itemId}`;
+};
+
+export const updatePartyItem = async (
+  id: number,
+  itemId: number,
+  updatePartyItemBody: UpdatePartyItemBody,
+  options?: RequestInit,
+): Promise<PartyItem> => {
+  return customFetch<PartyItem>(getUpdatePartyItemUrl(id, itemId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updatePartyItemBody),
+  });
+};
+
+export const getUpdatePartyItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePartyItem>>,
+    TError,
+    { id: number; itemId: number; data: BodyType<UpdatePartyItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePartyItem>>,
+  TError,
+  { id: number; itemId: number; data: BodyType<UpdatePartyItemBody> },
+  TContext
+> => {
+  const mutationKey = ["updatePartyItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePartyItem>>,
+    { id: number; itemId: number; data: BodyType<UpdatePartyItemBody> }
+  > = (props) => {
+    const { id, itemId, data } = props ?? {};
+
+    return updatePartyItem(id, itemId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePartyItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePartyItem>>
+>;
+export type UpdatePartyItemMutationBody = BodyType<UpdatePartyItemBody>;
+export type UpdatePartyItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a party stash item (quantity, notes)
+ */
+export const useUpdatePartyItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePartyItem>>,
+    TError,
+    { id: number; itemId: number; data: BodyType<UpdatePartyItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePartyItem>>,
+  TError,
+  { id: number; itemId: number; data: BodyType<UpdatePartyItemBody> },
+  TContext
+> => {
+  return useMutation(getUpdatePartyItemMutationOptions(options));
+};
+
+/**
+ * @summary Remove an item from the party stash
+ */
+export const getRemovePartyItemUrl = (id: number, itemId: number) => {
+  return `/api/campaigns/${id}/party-items/${itemId}`;
+};
+
+export const removePartyItem = async (
+  id: number,
+  itemId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getRemovePartyItemUrl(id, itemId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemovePartyItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removePartyItem>>,
+    TError,
+    { id: number; itemId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removePartyItem>>,
+  TError,
+  { id: number; itemId: number },
+  TContext
+> => {
+  const mutationKey = ["removePartyItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removePartyItem>>,
+    { id: number; itemId: number }
+  > = (props) => {
+    const { id, itemId } = props ?? {};
+
+    return removePartyItem(id, itemId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemovePartyItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removePartyItem>>
+>;
+
+export type RemovePartyItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Remove an item from the party stash
+ */
+export const useRemovePartyItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removePartyItem>>,
+    TError,
+    { id: number; itemId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removePartyItem>>,
+  TError,
+  { id: number; itemId: number },
+  TContext
+> => {
+  return useMutation(getRemovePartyItemMutationOptions(options));
+};
+
+/**
+ * @summary Transfer an item between party stash and a character inventory
+ */
+export const getTransferPartyItemUrl = (id: number, itemId: number) => {
+  return `/api/campaigns/${id}/party-items/${itemId}/transfer`;
+};
+
+export const transferPartyItem = async (
+  id: number,
+  itemId: number,
+  transferPartyItemBody: TransferPartyItemBody,
+  options?: RequestInit,
+): Promise<LedgerEntry> => {
+  return customFetch<LedgerEntry>(getTransferPartyItemUrl(id, itemId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(transferPartyItemBody),
+  });
+};
+
+export const getTransferPartyItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof transferPartyItem>>,
+    TError,
+    { id: number; itemId: number; data: BodyType<TransferPartyItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof transferPartyItem>>,
+  TError,
+  { id: number; itemId: number; data: BodyType<TransferPartyItemBody> },
+  TContext
+> => {
+  const mutationKey = ["transferPartyItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof transferPartyItem>>,
+    { id: number; itemId: number; data: BodyType<TransferPartyItemBody> }
+  > = (props) => {
+    const { id, itemId, data } = props ?? {};
+
+    return transferPartyItem(id, itemId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TransferPartyItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof transferPartyItem>>
+>;
+export type TransferPartyItemMutationBody = BodyType<TransferPartyItemBody>;
+export type TransferPartyItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Transfer an item between party stash and a character inventory
+ */
+export const useTransferPartyItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof transferPartyItem>>,
+    TError,
+    { id: number; itemId: number; data: BodyType<TransferPartyItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof transferPartyItem>>,
+  TError,
+  { id: number; itemId: number; data: BodyType<TransferPartyItemBody> },
+  TContext
+> => {
+  return useMutation(getTransferPartyItemMutationOptions(options));
+};
+
+/**
+ * @summary Deposit coins into the party pool
+ */
+export const getDepositCurrencyUrl = (id: number) => {
+  return `/api/campaigns/${id}/currency/deposit`;
+};
+
+export const depositCurrency = async (
+  id: number,
+  currencyDeltaBody: CurrencyDeltaBody,
+  options?: RequestInit,
+): Promise<PartyCurrency> => {
+  return customFetch<PartyCurrency>(getDepositCurrencyUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(currencyDeltaBody),
+  });
+};
+
+export const getDepositCurrencyMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof depositCurrency>>,
+    TError,
+    { id: number; data: BodyType<CurrencyDeltaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof depositCurrency>>,
+  TError,
+  { id: number; data: BodyType<CurrencyDeltaBody> },
+  TContext
+> => {
+  const mutationKey = ["depositCurrency"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof depositCurrency>>,
+    { id: number; data: BodyType<CurrencyDeltaBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return depositCurrency(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DepositCurrencyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof depositCurrency>>
+>;
+export type DepositCurrencyMutationBody = BodyType<CurrencyDeltaBody>;
+export type DepositCurrencyMutationError = ErrorType<Error>;
+
+/**
+ * @summary Deposit coins into the party pool
+ */
+export const useDepositCurrency = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof depositCurrency>>,
+    TError,
+    { id: number; data: BodyType<CurrencyDeltaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof depositCurrency>>,
+  TError,
+  { id: number; data: BodyType<CurrencyDeltaBody> },
+  TContext
+> => {
+  return useMutation(getDepositCurrencyMutationOptions(options));
+};
+
+/**
+ * @summary Withdraw coins from the party pool
+ */
+export const getWithdrawCurrencyUrl = (id: number) => {
+  return `/api/campaigns/${id}/currency/withdraw`;
+};
+
+export const withdrawCurrency = async (
+  id: number,
+  currencyDeltaBody: CurrencyDeltaBody,
+  options?: RequestInit,
+): Promise<PartyCurrency> => {
+  return customFetch<PartyCurrency>(getWithdrawCurrencyUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(currencyDeltaBody),
+  });
+};
+
+export const getWithdrawCurrencyMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof withdrawCurrency>>,
+    TError,
+    { id: number; data: BodyType<CurrencyDeltaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof withdrawCurrency>>,
+  TError,
+  { id: number; data: BodyType<CurrencyDeltaBody> },
+  TContext
+> => {
+  const mutationKey = ["withdrawCurrency"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof withdrawCurrency>>,
+    { id: number; data: BodyType<CurrencyDeltaBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return withdrawCurrency(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type WithdrawCurrencyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof withdrawCurrency>>
+>;
+export type WithdrawCurrencyMutationBody = BodyType<CurrencyDeltaBody>;
+export type WithdrawCurrencyMutationError = ErrorType<Error>;
+
+/**
+ * @summary Withdraw coins from the party pool
+ */
+export const useWithdrawCurrency = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof withdrawCurrency>>,
+    TError,
+    { id: number; data: BodyType<CurrencyDeltaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof withdrawCurrency>>,
+  TError,
+  { id: number; data: BodyType<CurrencyDeltaBody> },
+  TContext
+> => {
+  return useMutation(getWithdrawCurrencyMutationOptions(options));
+};
+
+/**
+ * @summary Split party pool evenly among all active party members
+ */
+export const getSplitCurrencyUrl = (id: number) => {
+  return `/api/campaigns/${id}/currency/split`;
+};
+
+export const splitCurrency = async (
+  id: number,
+  splitCurrencyBody: SplitCurrencyBody,
+  options?: RequestInit,
+): Promise<CoinSplitResult> => {
+  return customFetch<CoinSplitResult>(getSplitCurrencyUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(splitCurrencyBody),
+  });
+};
+
+export const getSplitCurrencyMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof splitCurrency>>,
+    TError,
+    { id: number; data: BodyType<SplitCurrencyBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof splitCurrency>>,
+  TError,
+  { id: number; data: BodyType<SplitCurrencyBody> },
+  TContext
+> => {
+  const mutationKey = ["splitCurrency"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof splitCurrency>>,
+    { id: number; data: BodyType<SplitCurrencyBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return splitCurrency(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SplitCurrencyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof splitCurrency>>
+>;
+export type SplitCurrencyMutationBody = BodyType<SplitCurrencyBody>;
+export type SplitCurrencyMutationError = ErrorType<Error>;
+
+/**
+ * @summary Split party pool evenly among all active party members
+ */
+export const useSplitCurrency = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof splitCurrency>>,
+    TError,
+    { id: number; data: BodyType<SplitCurrencyBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof splitCurrency>>,
+  TError,
+  { id: number; data: BodyType<SplitCurrencyBody> },
+  TContext
+> => {
+  return useMutation(getSplitCurrencyMutationOptions(options));
+};
+
+/**
+ * @summary Get the transaction history for a campaign
+ */
+export const getListLedgerEntriesUrl = (
+  id: number,
+  params?: ListLedgerEntriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/campaigns/${id}/ledger?${stringifiedParams}`
+    : `/api/campaigns/${id}/ledger`;
+};
+
+export const listLedgerEntries = async (
+  id: number,
+  params?: ListLedgerEntriesParams,
+  options?: RequestInit,
+): Promise<LedgerEntry[]> => {
+  return customFetch<LedgerEntry[]>(getListLedgerEntriesUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLedgerEntriesQueryKey = (
+  id: number,
+  params?: ListLedgerEntriesParams,
+) => {
+  return [`/api/campaigns/${id}/ledger`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLedgerEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLedgerEntries>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  params?: ListLedgerEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLedgerEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLedgerEntriesQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLedgerEntries>>
+  > = ({ signal }) =>
+    listLedgerEntries(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLedgerEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLedgerEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLedgerEntries>>
+>;
+export type ListLedgerEntriesQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get the transaction history for a campaign
+ */
+
+export function useListLedgerEntries<
+  TData = Awaited<ReturnType<typeof listLedgerEntries>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  params?: ListLedgerEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLedgerEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLedgerEntriesQueryOptions(id, params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
