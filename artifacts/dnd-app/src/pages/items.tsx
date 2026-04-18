@@ -5,10 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useListItems, getListItemsQueryKey } from "@workspace/api-client-react";
-import type { ListItemsParams } from "@workspace/api-client-react";
+import type { ListItemsParams, ItemRef } from "@workspace/api-client-react";
 import { Search, Package } from "lucide-react";
-
-interface ItemCost { amount: number; currency: string; }
 
 const TYPES = ["weapon", "armor", "potion", "tool", "adventuring-gear", "wondrous-item"];
 const RARITIES = ["common", "uncommon", "rare", "very rare", "legendary"];
@@ -29,7 +27,7 @@ export default function ItemsPage() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<string>("all");
   const [rarity, setRarity] = useState<string>("all");
-  const [selected, setSelected] = useState<any>(null);
+  const [selected, setSelected] = useState<ItemRef | null>(null);
 
   const params: ListItemsParams = {};
   if (search) params.search = search;
@@ -138,7 +136,7 @@ export default function ItemsPage() {
                   <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                     {selected.weight && <div>Weight: {selected.weight} lb</div>}
                     {selected.cost && (
-                      <div>Cost: {(selected.cost as unknown as ItemCost).amount} {(selected.cost as unknown as ItemCost).currency}</div>
+                      <div>Cost: {selected.cost.amount} {selected.cost.currency}</div>
                     )}
                     {selected.armorClass && <div>AC: {selected.armorClass}</div>}
                     {selected.damageRoll && (

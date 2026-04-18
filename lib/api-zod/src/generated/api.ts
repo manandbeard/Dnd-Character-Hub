@@ -835,7 +835,10 @@ export const ListItemsResponseItem = zod.object({
   type: zod.string(),
   rarity: zod.string(),
   weight: zod.string().nullish(),
-  cost: zod.object({}).passthrough(),
+  cost: zod.object({
+    amount: zod.number(),
+    currency: zod.string(),
+  }),
   requiresAttunement: zod.boolean(),
   attunementRequirements: zod.string().nullish(),
   armorClass: zod.number().nullish(),
@@ -862,7 +865,10 @@ export const GetItemResponse = zod.object({
   type: zod.string(),
   rarity: zod.string(),
   weight: zod.string().nullish(),
-  cost: zod.object({}).passthrough(),
+  cost: zod.object({
+    amount: zod.number(),
+    currency: zod.string(),
+  }),
   requiresAttunement: zod.boolean(),
   attunementRequirements: zod.string().nullish(),
   armorClass: zod.number().nullish(),

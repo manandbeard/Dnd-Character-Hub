@@ -353,7 +353,10 @@ export interface SpellRef {
   rawData: SpellRefRawData;
 }
 
-export type ItemRefCost = { [key: string]: unknown };
+export type ItemRefCost = {
+  amount: number;
+  currency: string;
+};
 
 export type ItemRefRawData = { [key: string]: unknown };
 

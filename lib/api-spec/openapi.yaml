@@ -1548,6 +1548,14 @@ components:
           type: ["string", "null"]
         cost:
           type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+          required:
+            - amount
+            - currency
         requiresAttunement:
           type: boolean
         attunementRequirements:

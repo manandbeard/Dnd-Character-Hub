@@ -91,7 +91,7 @@ router.post("/characters", requireAuth, async (req, res): Promise<void> => {
     res.status(201).json(character);
   } catch (err) {
     req.log.error({ err }, "Failed to insert character");
-    res.status(500).json({ error: "Internal server error", details: String(err) });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
