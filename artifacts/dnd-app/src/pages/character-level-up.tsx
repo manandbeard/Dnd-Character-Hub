@@ -140,7 +140,7 @@ export default function CharacterLevelUp({ id }: Props) {
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {ABILITIES.map((ability) => {
-                    const cur = (character as any)[ability] as number;
+                    const cur = character[ability];
                     const added = asiPoints[ability] ?? 0;
                     return (
                       <div key={ability} className="flex items-center justify-between bg-muted/20 rounded p-2">

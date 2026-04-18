@@ -8,6 +8,8 @@ import { useListItems, getListItemsQueryKey } from "@workspace/api-client-react"
 import type { ListItemsParams } from "@workspace/api-client-react";
 import { Search, Package } from "lucide-react";
 
+interface ItemCost { amount: number; currency: string; }
+
 const TYPES = ["weapon", "armor", "potion", "tool", "adventuring-gear", "wondrous-item"];
 const RARITIES = ["common", "uncommon", "rare", "very rare", "legendary"];
 
@@ -136,7 +138,7 @@ export default function ItemsPage() {
                   <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                     {selected.weight && <div>Weight: {selected.weight} lb</div>}
                     {selected.cost && (
-                      <div>Cost: {(selected.cost as any).amount} {(selected.cost as any).currency}</div>
+                      <div>Cost: {(selected.cost as unknown as ItemCost).amount} {(selected.cost as unknown as ItemCost).currency}</div>
                     )}
                     {selected.armorClass && <div>AC: {selected.armorClass}</div>}
                     {selected.damageRoll && (
