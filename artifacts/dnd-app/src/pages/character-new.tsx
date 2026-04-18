@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useListRaces, useListClasses, useListBackgrounds, useCreateCharacter, getListCharactersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -32,16 +33,31 @@ const ABILITY_LABELS: Record<AbilityKey, string> = {
   charisma: "CHA",
 };
 
+const ALL_SKILLS = [
+  "acrobatics", "animalHandling", "arcana", "athletics", "deception",
+  "history", "insight", "intimidation", "investigation", "medicine",
+  "nature", "perception", "performance", "persuasion", "religion",
+  "sleightOfHand", "stealth", "survival",
+] as const;
+
+const SKILL_LABELS: Record<string, string> = {
+  acrobatics: "Acrobatics", animalHandling: "Animal Handling", arcana: "Arcana",
+  athletics: "Athletics", deception: "Deception", history: "History",
+  insight: "Insight", intimidation: "Intimidation", investigation: "Investigation",
+  medicine: "Medicine", nature: "Nature", perception: "Perception",
+  performance: "Performance", persuasion: "Persuasion", religion: "Religion",
+  sleightOfHand: "Sleight of Hand", stealth: "Stealth", survival: "Survival",
+};
+
 function modifier(score: number) {
   const m = Math.floor((score - 10) / 2);
   return m >= 0 ? `+${m}` : String(m);
 }
 
-const STEPS = ["Identity", "Ability Scores", "Background", "Review"];
+const STEPS = ["Identity", "Ability Scores", "Background", "Skills", "Review"];
 
 function rollAbilityScore() {
-  // 4d6 drop lowest
-  const dice = [1,2,3,4].map(() => Math.floor(Math.random() * 6) + 1);
+  const dice = [1, 2, 3, 4].map(() => Math.floor(Math.random() * 6) + 1);
   dice.sort((a, b) => a - b);
   return dice.slice(1).reduce((a, b) => a + b, 0);
 }
@@ -58,6 +74,7 @@ interface FormState {
   bonds: string;
   flaws: string;
   backstory: string;
+  skillProficiencies: string[];
 }
 
 export default function CharacterNew() {
@@ -83,9 +100,10 @@ export default function CharacterNew() {
     bonds: "",
     flaws: "",
     backstory: "",
+    skillProficiencies: [],
   });
 
-  function set(key: keyof FormState, value: any) {
+  function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -95,17 +113,31 @@ export default function CharacterNew() {
   }
 
   function rollAll() {
-    const rolled: Record<AbilityKey, number> = {} as any;
+    const rolled = {} as Record<AbilityKey, number>;
     for (const a of ABILITIES) {
       rolled[a] = rollAbilityScore();
     }
     setForm((prev) => ({ ...prev, scores: rolled }));
   }
 
+  function toggleSkill(skill: string, bgSkills: string[], maxClass: number) {
+    setForm((prev) => {
+      const isFixed = bgSkills.includes(skill);
+      if (isFixed) return prev;
+      const classOnly = prev.skillProficiencies.filter((s) => !bgSkills.includes(s));
+      if (classOnly.includes(skill)) {
+        return { ...prev, skillProficiencies: prev.skillProficiencies.filter((s) => s !== skill) };
+      }
+      if (classOnly.length >= maxClass) return prev;
+      return { ...prev, skillProficiencies: [...prev.skillProficiencies, skill] };
+    });
+  }
+
   function canProceed() {
     if (step === 0) return form.name.trim() && form.race && form.class;
     if (step === 1) return ABILITIES.every((a) => form.scores[a] >= 1 && form.scores[a] <= 20);
     if (step === 2) return !!form.background;
+    if (step === 3) return true; // skills are optional
     return true;
   }
 
@@ -124,6 +156,7 @@ export default function CharacterNew() {
           bonds: form.bonds,
           flaws: form.flaws,
           backstory: form.backstory,
+          skillProficiencies: form.skillProficiencies,
         },
       },
       {
@@ -143,7 +176,17 @@ export default function CharacterNew() {
   const selectedClass = classes?.find((c) => c.slug === form.class);
   const selectedBg = backgrounds?.find((b) => b.slug === form.background);
 
-  // Compute scores with racial bonuses for review
+  // Background-granted skills (fixed)
+  const bgSkills = (selectedBg?.skillProficiencies as string[] | null) ?? [];
+
+  // Class skill choice metadata
+  const classSkillChoices = selectedClass?.skillChoices as { choose?: number; from?: string[] } | null;
+  const classChooseCount = classSkillChoices?.choose ?? 2;
+  const classSkillPool = (classSkillChoices?.from as string[] | null) ?? [...ALL_SKILLS];
+
+  // Skills selected by the player as class choices (excluding bg-granted)
+  const classChosenSkills = form.skillProficiencies.filter((s) => !bgSkills.includes(s));
+
   function finalScore(ability: AbilityKey) {
     const bonus = (selectedRace?.abilityBonuses as Record<string, number> | null)?.[ability] ?? 0;
     return form.scores[ability] + bonus;
@@ -153,9 +196,9 @@ export default function CharacterNew() {
     <AppLayout>
       <div className="p-8 max-w-2xl mx-auto">
         {/* Step indicator */}
-        <div className="flex items-center gap-2 mb-8">
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto">
           {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
+            <div key={s} className="flex items-center gap-2 flex-shrink-0">
               <div className={cn(
                 "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
                 i === step ? "bg-primary text-primary-foreground" :
@@ -163,7 +206,7 @@ export default function CharacterNew() {
               )}>
                 {i + 1}
               </div>
-              <span className={cn("text-sm", i === step ? "text-foreground" : "text-muted-foreground")}>
+              <span className={cn("text-sm whitespace-nowrap", i === step ? "text-foreground" : "text-muted-foreground")}>
                 {s}
               </span>
               {i < STEPS.length - 1 && <div className="w-6 h-px bg-border mx-1" />}
@@ -237,10 +280,10 @@ export default function CharacterNew() {
                 <CardContent className="p-4">
                   <p className="text-sm font-medium mb-1">{selectedClass.name}</p>
                   <p className="text-xs text-muted-foreground mb-2">{selectedClass.description}</p>
-                  <div className="flex gap-2 text-xs text-muted-foreground">
+                  <div className="flex gap-4 text-xs text-muted-foreground flex-wrap">
                     <span>Hit Die: d{selectedClass.hitDie}</span>
-                    <span>·</span>
                     <span>Primary: {String(selectedClass.primaryAbility).toUpperCase()}</span>
+                    <span>Saves: {(selectedClass.savingThrows as string[]).join(", ").toUpperCase()}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -302,14 +345,29 @@ export default function CharacterNew() {
           </div>
         )}
 
-        {/* Step 2: Background */}
+        {/* Step 2: Background & Story */}
         {step === 2 && (
           <div className="space-y-5">
             <h2 className="font-serif text-2xl font-bold">Background &amp; Story</h2>
 
             <div className="space-y-1.5">
               <Label>Background</Label>
-              <Select value={form.background} onValueChange={(v) => set("background", v)}>
+              <Select value={form.background} onValueChange={(v) => {
+                set("background", v);
+                // Pre-populate background skill proficiencies
+                const bg = backgrounds?.find((b) => b.slug === v);
+                if (bg) {
+                  const bgProfs = (bg.skillProficiencies as string[] | null) ?? [];
+                  setForm((prev) => ({
+                    ...prev,
+                    background: v,
+                    skillProficiencies: [
+                      ...bgProfs,
+                      ...prev.skillProficiencies.filter((s) => !bgProfs.includes(s) && bgSkills.includes(s) === false),
+                    ],
+                  }));
+                }
+              }}>
                 <SelectTrigger data-testid="select-background">
                   <SelectValue placeholder="Choose background..." />
                 </SelectTrigger>
@@ -327,13 +385,8 @@ export default function CharacterNew() {
                   <p className="font-medium mb-1">{selectedBg.name}</p>
                   <p className="text-muted-foreground text-xs mb-2">{selectedBg.description}</p>
                   <div className="text-xs text-muted-foreground">
-                    Skills: {(selectedBg.skillProficiencies as string[]).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(", ")}
+                    Skills: {(selectedBg.skillProficiencies as string[]).map((s) => SKILL_LABELS[s] ?? s).join(", ")}
                   </div>
-                  {((selectedBg.personalityTraits as string[]) ?? []).length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Trait suggestion: "{(selectedBg.personalityTraits as string[])[0]}"
-                    </p>
-                  )}
                 </CardContent>
               </Card>
             )}
@@ -374,8 +427,80 @@ export default function CharacterNew() {
           </div>
         )}
 
-        {/* Step 3: Review */}
+        {/* Step 3: Skills */}
         {step === 3 && (
+          <div className="space-y-5">
+            <h2 className="font-serif text-2xl font-bold">Skill Proficiencies</h2>
+
+            {/* Background skills */}
+            {bgSkills.length > 0 && (
+              <Card className="bg-accent/30">
+                <CardContent className="p-4">
+                  <p className="text-sm font-medium mb-2">Background: {selectedBg?.name}</p>
+                  <p className="text-xs text-muted-foreground mb-2">These skills are automatically granted:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {bgSkills.map((s) => (
+                      <Badge key={s} variant="secondary" className="text-xs" data-testid={`badge-bg-skill-${s}`}>
+                        {SKILL_LABELS[s] ?? s}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Class skill choices */}
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium">
+                  {selectedClass?.name ?? "Class"} Skills
+                  <span className="text-muted-foreground font-normal ml-2 text-xs">
+                    ({classChosenSkills.length} / {classChooseCount} chosen)
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Choose {classChooseCount} skill{classChooseCount !== 1 ? "s" : ""} from the options below:
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {classSkillPool.map((skill) => {
+                  const isFixed = bgSkills.includes(skill);
+                  const isChosen = form.skillProficiencies.includes(skill);
+                  const isClassChosen = classChosenSkills.includes(skill);
+                  const isMaxed = classChosenSkills.length >= classChooseCount && !isClassChosen;
+
+                  return (
+                    <div
+                      key={skill}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md px-3 py-2 border transition-colors",
+                        isFixed ? "opacity-60 bg-muted/20 border-transparent" :
+                        isChosen ? "bg-primary/10 border-primary/30" :
+                        isMaxed ? "opacity-40 border-border" : "border-border hover:bg-accent/20 cursor-pointer"
+                      )}
+                      onClick={() => !isFixed && toggleSkill(skill, bgSkills, classChooseCount)}
+                      data-testid={`skill-option-${skill}`}
+                    >
+                      <Checkbox
+                        checked={isChosen}
+                        disabled={isFixed || (isMaxed && !isChosen)}
+                        onCheckedChange={() => !isFixed && toggleSkill(skill, bgSkills, classChooseCount)}
+                        className="pointer-events-none"
+                        data-testid={`checkbox-skill-${skill}`}
+                      />
+                      <span className="text-sm">{SKILL_LABELS[skill] ?? skill}</span>
+                      {isFixed && <span className="text-xs text-muted-foreground ml-auto">(BG)</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Review */}
+        {step === 4 && (
           <div className="space-y-5">
             <h2 className="font-serif text-2xl font-bold">Review</h2>
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
@@ -398,6 +523,17 @@ export default function CharacterNew() {
                   </div>
                 ))}
               </div>
+
+              {form.skillProficiencies.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Skill Proficiencies</p>
+                  <div className="flex flex-wrap gap-1">
+                    {form.skillProficiencies.map((s) => (
+                      <Badge key={s} variant="outline" className="text-xs">{SKILL_LABELS[s] ?? s}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {form.personalityTraits && (
                 <div>

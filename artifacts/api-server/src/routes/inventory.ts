@@ -22,7 +22,7 @@ async function assertOwner(characterId: number, userId: string): Promise<boolean
 
 // GET /characters/:id/inventory
 router.get("/characters/:id/inventory", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = ListCharacterInventoryParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -44,7 +44,7 @@ router.get("/characters/:id/inventory", requireAuth, async (req, res): Promise<v
 
 // POST /characters/:id/inventory
 router.post("/characters/:id/inventory", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = AddInventoryItemParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -78,7 +78,7 @@ router.post("/characters/:id/inventory", requireAuth, async (req, res): Promise<
 
 // PATCH /characters/:id/inventory/:itemId
 router.patch("/characters/:id/inventory/:itemId", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = UpdateInventoryItemParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -116,7 +116,7 @@ router.patch("/characters/:id/inventory/:itemId", requireAuth, async (req, res):
 
 // DELETE /characters/:id/inventory/:itemId
 router.delete("/characters/:id/inventory/:itemId", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = RemoveInventoryItemParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

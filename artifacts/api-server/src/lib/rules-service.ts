@@ -1,4 +1,6 @@
-import type { Character } from "@workspace/db";
+import { db, classesTable, racesTable, backgroundsTable } from "@workspace/db";
+import type { Character, Class, Race, Background } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 export const SKILLS = {
   acrobatics: "dexterity",
@@ -123,4 +125,52 @@ export function computeMaxHpOnLevelUp(
 
 export function computeStartingMaxHp(hitDie: number, constitutionMod: number): number {
   return hitDie + constitutionMod;
+}
+
+// ──────────────────────────────── DB-backed rules queries ────────────────────────────────
+
+export async function getClassBySlug(slug: string): Promise<Class | null> {
+  const [cls] = await db
+    .select()
+    .from(classesTable)
+    .where(eq(classesTable.slug, slug));
+  return cls ?? null;
+}
+
+export async function getRaceBySlug(slug: string): Promise<Race | null> {
+  const [race] = await db
+    .select()
+    .from(racesTable)
+    .where(eq(racesTable.slug, slug));
+  return race ?? null;
+}
+
+export async function getBackgroundBySlug(slug: string): Promise<Background | null> {
+  const [bg] = await db
+    .select()
+    .from(backgroundsTable)
+    .where(eq(backgroundsTable.slug, slug));
+  return bg ?? null;
+}
+
+/**
+ * Derive the spellcasting ability for a class from its spellcasting JSON blob.
+ * Returns null for non-spellcasting classes.
+ */
+export function getSpellcastingAbility(cls: Class): AbilityName | null {
+  const sc = cls.spellcasting as Record<string, unknown> | null;
+  if (!sc || !sc.ability) return null;
+  const ability = sc.ability as string;
+  const abilities: AbilityName[] = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"];
+  return abilities.includes(ability as AbilityName) ? (ability as AbilityName) : null;
+}
+
+/**
+ * Derive starting saving throw proficiencies from class data.
+ */
+export function getClassSavingThrows(cls: Class): AbilityName[] {
+  const throws = cls.savingThrows as string[];
+  if (!Array.isArray(throws)) return [];
+  const abilities: AbilityName[] = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"];
+  return throws.filter((t): t is AbilityName => abilities.includes(t as AbilityName));
 }

@@ -22,7 +22,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Zap, Plus, Trash2, ArrowUp } from "lucide-react";
+import { Shield, Zap, Plus, Trash2, ArrowUp, Heart, Skull } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props { id: number; }
@@ -154,6 +154,8 @@ export default function CharacterSheet({ id }: Props) {
   const derivedSkills = (derived?.skills ?? {}) as Record<string, { mod: number; proficient: boolean }>;
   const derivedSaves = (derived?.savingThrows ?? {}) as Record<string, { mod: number; proficient: boolean }>;
 
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
   return (
     <AppLayout>
       <div className="p-6">
@@ -162,8 +164,8 @@ export default function CharacterSheet({ id }: Props) {
           <div>
             <h1 className="font-serif text-3xl font-bold" data-testid="text-character-name">{character.name}</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              Level {character.level} {character.race.charAt(0).toUpperCase() + character.race.slice(1)} {character.class.charAt(0).toUpperCase() + character.class.slice(1)}
-              {character.background && ` · ${character.background.charAt(0).toUpperCase() + character.background.slice(1)}`}
+              Level {character.level} {capitalize(character.race)} {capitalize(character.class)}
+              {character.background && ` · ${capitalize(character.background)}`}
               {" · "}{character.alignment}
             </p>
           </div>
@@ -175,7 +177,7 @@ export default function CharacterSheet({ id }: Props) {
           </Link>
         </div>
 
-        {/* Top stats bar */}
+        {/* Quick stats bar */}
         <div className="grid grid-cols-4 gap-3 mb-6">
           {/* HP */}
           <Card data-testid="card-hp">
@@ -189,22 +191,6 @@ export default function CharacterSheet({ id }: Props) {
                 )}
               </div>
               <HpBar current={character.currentHp} max={character.maxHp} />
-              <div className="flex gap-1.5 mt-2">
-                <Input
-                  type="number"
-                  placeholder="±"
-                  value={hpDelta || ""}
-                  onChange={(e) => setHpDelta(parseInt(e.target.value) || 0)}
-                  className="h-7 w-16 text-xs"
-                  data-testid="input-hp-delta"
-                />
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-destructive"
-                  onClick={() => handleHpChange(-Math.abs(hpDelta))}
-                  data-testid="button-hp-damage">Dmg</Button>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-green-400"
-                  onClick={() => handleHpChange(Math.abs(hpDelta))}
-                  data-testid="button-hp-heal">Heal</Button>
-              </div>
             </CardContent>
           </Card>
 
@@ -237,7 +223,7 @@ export default function CharacterSheet({ id }: Props) {
             </CardContent>
           </Card>
 
-          {/* Proficiency & Passives */}
+          {/* Prof & Passives */}
           <Card>
             <CardContent className="p-4">
               <div className="space-y-2">
@@ -258,18 +244,19 @@ export default function CharacterSheet({ id }: Props) {
           </Card>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="abilities">
-          <TabsList className="mb-4">
-            <TabsTrigger value="abilities" data-testid="tab-abilities">Abilities</TabsTrigger>
-            <TabsTrigger value="skills" data-testid="tab-skills">Skills</TabsTrigger>
+        {/* Tabs: Overview | Combat | Features & Traits | Spells | Inventory */}
+        <Tabs defaultValue="overview">
+          <TabsList className="mb-4 flex-wrap h-auto gap-1">
+            <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+            <TabsTrigger value="combat" data-testid="tab-combat">Combat</TabsTrigger>
+            <TabsTrigger value="features" data-testid="tab-features">Features &amp; Traits</TabsTrigger>
             <TabsTrigger value="spells" data-testid="tab-spells">Spells</TabsTrigger>
             <TabsTrigger value="inventory" data-testid="tab-inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="notes" data-testid="tab-notes">Notes</TabsTrigger>
           </TabsList>
 
-          {/* Abilities Tab */}
-          <TabsContent value="abilities" className="space-y-4">
+          {/* ── OVERVIEW TAB: Ability Scores + Saving Throws + Spellcasting ── */}
+          <TabsContent value="overview" className="space-y-4">
+            {/* Ability Scores */}
             <div className="grid grid-cols-6 gap-3">
               {ABILITIES.map((ability) => {
                 const score = character[ability as keyof typeof character] as number;
@@ -303,7 +290,8 @@ export default function CharacterSheet({ id }: Props) {
                       <div key={ability} className="flex items-center justify-between text-sm py-0.5"
                         data-testid={`row-save-${ability}`}>
                         <div className="flex items-center gap-2">
-                          <div className={cn("w-3 h-3 rounded-full border", save?.proficient ? "bg-primary border-primary" : "border-muted-foreground")} />
+                          <div className={cn("w-3 h-3 rounded-full border",
+                            save?.proficient ? "bg-primary border-primary" : "border-muted-foreground")} />
                           <span>{ABILITY_LABELS[ability]}</span>
                         </div>
                         <span className="font-mono text-sm">{signedInt(save?.mod ?? 0)}</span>
@@ -313,56 +301,178 @@ export default function CharacterSheet({ id }: Props) {
                 </CardContent>
               </Card>
 
-              {/* Currency */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Currency</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-5 gap-2 text-center text-sm">
-                    {(["cp", "sp", "ep", "gp", "pp"] as const).map((coin) => (
-                      <div key={coin} data-testid={`text-currency-${coin}`}>
-                        <div className="text-xs text-muted-foreground uppercase">{coin}</div>
-                        <div className="font-bold">{character[coin]}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {character.spellcastingAbility && derived?.spellSaveDC && (
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-sm text-center border-t border-border pt-3">
+              {/* Currency + Spellcasting */}
+              <div className="space-y-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Currency</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-5 gap-2 text-center text-sm">
+                      {(["cp", "sp", "ep", "gp", "pp"] as const).map((coin) => (
+                        <div key={coin} data-testid={`text-currency-${coin}`}>
+                          <div className="text-xs text-muted-foreground uppercase">{coin}</div>
+                          <div className="font-bold">{character[coin]}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {character.spellcastingAbility && derived?.spellSaveDC && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Spellcasting</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-3 gap-2 text-sm text-center">
                       <div>
-                        <div className="text-xs text-muted-foreground">Spell Save DC</div>
-                        <div className="font-bold text-lg" data-testid="text-spell-save-dc">{derived.spellSaveDC}</div>
+                        <div className="text-xs text-muted-foreground">Ability</div>
+                        <div className="font-bold capitalize">{character.spellcastingAbility}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-muted-foreground">Spell Attack</div>
-                        <div className="font-bold text-lg" data-testid="text-spell-attack">
+                        <div className="text-xs text-muted-foreground">Save DC</div>
+                        <div className="font-bold" data-testid="text-spell-save-dc">{derived.spellSaveDC}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Attack</div>
+                        <div className="font-bold" data-testid="text-spell-attack">
                           {signedInt(derived.spellAttackBonus ?? 0)}
                         </div>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
           </TabsContent>
 
-          {/* Skills Tab */}
-          <TabsContent value="skills">
+          {/* ── COMBAT TAB: HP management + Conditions + Death Saves ── */}
+          <TabsContent value="combat" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {/* HP Management */}
+              <Card data-testid="card-combat-hp">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-destructive" />
+                    Hit Points
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold" data-testid="text-combat-current-hp">{character.currentHp}</span>
+                    <span className="text-muted-foreground text-lg">/ {character.maxHp}</span>
+                    {character.temporaryHp > 0 && (
+                      <span className="text-sm text-blue-400">+{character.temporaryHp} temp</span>
+                    )}
+                  </div>
+                  <HpBar current={character.currentHp} max={character.maxHp} />
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="number"
+                      placeholder="Amount"
+                      value={hpDelta || ""}
+                      onChange={(e) => setHpDelta(parseInt(e.target.value) || 0)}
+                      className="h-8 w-24 text-sm"
+                      data-testid="input-hp-delta"
+                    />
+                    <Button size="sm" variant="outline" className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                      onClick={() => handleHpChange(-Math.abs(hpDelta))}
+                      data-testid="button-hp-damage">
+                      Damage
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-green-400 border-green-600/40 hover:bg-green-900/20"
+                      onClick={() => handleHpChange(Math.abs(hpDelta))}
+                      data-testid="button-hp-heal">
+                      Heal
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Combat Stats */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Combat Stats</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center bg-muted/20 rounded p-3">
+                      <div className="text-xs text-muted-foreground">Armor Class</div>
+                      <div className="text-3xl font-bold flex items-center justify-center gap-1">
+                        <Shield className="w-4 h-4 text-muted-foreground" />
+                        <span data-testid="text-combat-ac">{character.armorClass}</span>
+                      </div>
+                    </div>
+                    <div className="text-center bg-muted/20 rounded p-3">
+                      <div className="text-xs text-muted-foreground">Initiative</div>
+                      <div className="text-3xl font-bold" data-testid="text-combat-initiative">
+                        {signedInt(derived?.initiative ?? 0)}
+                      </div>
+                    </div>
+                    <div className="text-center bg-muted/20 rounded p-3">
+                      <div className="text-xs text-muted-foreground">Speed</div>
+                      <div className="text-2xl font-bold" data-testid="text-combat-speed">{character.speed} ft</div>
+                    </div>
+                    <div className="text-center bg-muted/20 rounded p-3">
+                      <div className="text-xs text-muted-foreground">Hit Die</div>
+                      <div className="text-2xl font-bold">d?</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Death Saves */}
+            {character.currentHp === 0 && (
+              <Card className="border-destructive/40">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-destructive">
+                    <Skull className="w-4 h-4" />
+                    Death Saving Throws
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground mb-2">Successes (3 = stable)</p>
+                      <div className="flex gap-2">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="w-8 h-8 rounded-full border border-green-600 bg-green-900/20" />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground mb-2">Failures (3 = dead)</p>
+                      <div className="flex gap-2">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="w-8 h-8 rounded-full border border-destructive bg-destructive/20" />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Skills quick-reference */}
             <Card>
-              <CardContent className="p-4">
-                <div className="space-y-0.5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Skill Checks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
                   {SKILLS.map(({ key, label, ability }) => {
                     const skill = derivedSkills[key];
                     return (
-                      <div key={key} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0"
+                      <div key={key} className="flex items-center justify-between py-1 border-b border-border/20 last:border-0"
                         data-testid={`row-skill-${key}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-3 h-3 rounded-full border flex-shrink-0",
+                        <div className="flex items-center gap-1.5">
+                          <div className={cn("w-2.5 h-2.5 rounded-full border flex-shrink-0",
                             skill?.proficient ? "bg-primary border-primary" : "border-muted-foreground")} />
-                          <span className="text-sm">{label}</span>
-                          <span className="text-xs text-muted-foreground">({ability})</span>
+                          <span className="text-xs">{label}</span>
+                          <span className="text-[10px] text-muted-foreground">({ability})</span>
                         </div>
-                        <span className="font-mono text-sm" data-testid={`text-skill-mod-${key}`}>
+                        <span className="font-mono text-xs" data-testid={`text-skill-mod-${key}`}>
                           {signedInt(skill?.mod ?? 0)}
                         </span>
                       </div>
@@ -373,7 +483,75 @@ export default function CharacterSheet({ id }: Props) {
             </Card>
           </TabsContent>
 
-          {/* Spells Tab */}
+          {/* ── FEATURES & TRAITS TAB ── */}
+          <TabsContent value="features" className="space-y-4">
+            {/* Personality */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { key: "personalityTraits" as const, label: "Personality Traits" },
+                { key: "ideals" as const, label: "Ideals" },
+                { key: "bonds" as const, label: "Bonds" },
+                { key: "flaws" as const, label: "Flaws" },
+              ].map(({ key, label }) => (
+                <Card key={key}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">{label}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {character[key] || <em className="opacity-50">None recorded</em>}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Backstory */}
+            {character.backstory && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Backstory</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{character.backstory}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Skill proficiencies */}
+            {(character.skillProficiencies as string[]).length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Skill Proficiencies</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(character.skillProficiencies as string[]).map((s) => (
+                      <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Class / racial features */}
+            {(character.features as unknown as string[]).length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Class &amp; Racial Features</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(character.features as unknown as string[]).map((f, i) => (
+                      <Badge key={i} variant="outline">{f}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* ── SPELLS TAB ── */}
           <TabsContent value="spells">
             <div className="space-y-4">
               {character.spellcastingAbility ? (
@@ -394,7 +572,9 @@ export default function CharacterSheet({ id }: Props) {
                     <Card>
                       <CardContent className="p-3">
                         <div className="text-xs text-muted-foreground">Spell Attack</div>
-                        <div className="font-bold text-lg">{derived?.spellAttackBonus != null ? signedInt(derived.spellAttackBonus) : "—"}</div>
+                        <div className="font-bold text-lg">
+                          {derived?.spellAttackBonus != null ? signedInt(derived.spellAttackBonus) : "—"}
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -410,7 +590,7 @@ export default function CharacterSheet({ id }: Props) {
                         <div className="flex flex-wrap gap-1.5">
                           {(character.knownSpells as string[]).map((slug) => (
                             <Badge key={slug} variant="outline" data-testid={`badge-spell-${slug}`}>
-                              {slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                              {slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                             </Badge>
                           ))}
                         </div>
@@ -427,7 +607,7 @@ export default function CharacterSheet({ id }: Props) {
             </div>
           </TabsContent>
 
-          {/* Inventory Tab */}
+          {/* ── INVENTORY TAB ── */}
           <TabsContent value="inventory">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -445,7 +625,8 @@ export default function CharacterSheet({ id }: Props) {
               ) : (
                 <div className="space-y-1.5">
                   {(inventory ?? []).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between bg-card border border-border rounded px-3 py-2"
+                    <div key={item.id}
+                      className="flex items-center justify-between bg-card border border-border rounded px-3 py-2"
                       data-testid={`row-inventory-${item.id}`}>
                       <span className="text-sm font-medium">{item.name}</span>
                       <div className="flex items-center gap-2">
@@ -509,55 +690,6 @@ export default function CharacterSheet({ id }: Props) {
                 </DialogContent>
               </Dialog>
             </div>
-          </TabsContent>
-
-          {/* Notes Tab */}
-          <TabsContent value="notes" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { key: "personalityTraits", label: "Personality Traits" },
-                { key: "ideals", label: "Ideals" },
-                { key: "bonds", label: "Bonds" },
-                { key: "flaws", label: "Flaws" },
-              ].map(({ key, label }) => (
-                <Card key={key}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">{label}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {(character as any)[key] || <em className="opacity-50">None recorded</em>}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {character.backstory && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Backstory</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{character.backstory}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {(character.features as any[])?.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Features &amp; Traits</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(character.features as unknown as string[]).map((f, i) => (
-                      <Badge key={i} variant="outline">{f}</Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
         </Tabs>
       </div>

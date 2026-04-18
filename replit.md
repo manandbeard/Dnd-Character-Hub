@@ -47,16 +47,17 @@
 ### Backend (`artifacts/api-server/src/`)
 - `app.ts` — Express app with Clerk middleware + all route mounts
 - `routes/` — characters, inventory, races, classes, backgrounds, spells, items, users
-- `lib/rules-service.ts` — D&D 5e rules engine (ability modifiers, proficiency bonus, skills, saving throws, spell DC, HP, passive perception)
-- `middlewares/requireAuth.ts` — Clerk session auth middleware
+- `lib/rules-service.ts` — D&D 5e rules engine (ability modifiers, proficiency bonus, skills, saving throws, spell DC, HP, passive perception) + DB-backed lookups (getClassBySlug, getRaceBySlug, getBackgroundBySlug)
+- `middlewares/requireAuth.ts` — Clerk session auth middleware; auto-upserts user in `users` table so FK constraints on characters are always satisfied
 - `middlewares/clerkProxyMiddleware.ts` — Clerk FAPI proxy (production only)
+- `types/express.d.ts` — augments `Request` with `userId: string`
 
 ### Frontend (`artifacts/dnd-app/src/`)
 - `main.tsx` — ClerkProvider with `VITE_CLERK_PROXY_URL` (env-driven, dev=none)
-- `App.tsx` — auth-guarded routes via wouter
+- `App.tsx` — auth-guarded routes via wouter; `ClerkTokenSync` component wires Clerk JWT to API client's Bearer token getter (`setAuthTokenGetter`)
 - `index.css` — dark leather/parchment theme (crimson red accent, Playfair Display serif)
 - `components/layout/AppLayout.tsx` — sidebar nav layout
-- `pages/` — landing, characters (roster), character-new (4-step wizard), character-sheet (5 tabs), character-level-up, spells (compendium), items (compendium), account
+- `pages/` — landing, characters (roster), character-new (5-step wizard: Identity→Ability Scores→Background→Skills→Review), character-sheet (5 tabs: Overview/Combat/Features & Traits/Spells/Inventory), character-level-up, spells (compendium), items (compendium), account
 
 ### Schema (`lib/db/src/schema/`)
 - `users.ts`, `characters.ts`, `ability_scores.ts`, `character_inventory.ts`
@@ -72,10 +73,11 @@
 ## Important Notes
 
 - User IDs are Clerk string IDs (text PK). Character IDs are serial ints.
-- `requireAuth` reads `auth.sessionClaims.userId ?? auth.userId` and attaches to `req.userId`.
+- `requireAuth` reads `auth.sessionClaims.userId ?? auth.userId` and attaches to `req.userId`. It also auto-upserts the user via `onConflictDoNothing` to satisfy FK constraints without race conditions.
 - Clerk proxy is production-only (the `clerkProxyMiddleware` returns `next()` in dev).
 - `VITE_CLERK_PROXY_URL` is automatically set by Replit in production; undefined in dev.
 - The dnd-app workflow uses `PORT=18703 BASE_PATH=/ pnpm --filter @workspace/dnd-app run dev` (env vars inlined in command due to artifact env injection issue).
 - Health endpoint is at `/api/healthz`.
+- `ClerkTokenSync` must render inside both `ClerkProvider` and `QueryClientProvider` (it uses `useAuth` from Clerk).
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

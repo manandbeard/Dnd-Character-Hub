@@ -9,7 +9,7 @@ const router: IRouter = Router();
 
 // GET /users/me — get or auto-create user profile
 router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const auth = getAuth(req);
 
   let [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -32,7 +32,7 @@ router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
 
 // PATCH /users/me — update user profile
 router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const parsed = UpdateMeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });

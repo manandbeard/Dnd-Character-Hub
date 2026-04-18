@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@clerk/react";
+import { useEffect } from "react";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Characters from "@/pages/characters";
@@ -21,6 +23,20 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/** Keeps the API client's auth token getter in sync with the Clerk session. */
+function ClerkTokenSync() {
+  const { getToken, isSignedIn } = useAuth();
+  useEffect(() => {
+    if (isSignedIn) {
+      setAuthTokenGetter(() => getToken());
+    } else {
+      setAuthTokenGetter(null);
+    }
+    return () => setAuthTokenGetter(null);
+  }, [isSignedIn, getToken]);
+  return null;
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
@@ -67,6 +83,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <ClerkTokenSync />
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Router />
         </WouterRouter>

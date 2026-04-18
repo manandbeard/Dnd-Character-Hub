@@ -5,6 +5,9 @@ import {
   backgroundsTable,
   spellsTable,
   itemsTable,
+  type InsertBackground,
+  type InsertSpell,
+  type InsertItem,
 } from "@workspace/db";
 
 // ──────────────────────────────── RACES ────────────────────────────────
@@ -301,7 +304,7 @@ const CLASSES = [
 ];
 
 // ──────────────────────────────── BACKGROUNDS ────────────────────────────────
-const BACKGROUNDS = [
+const BACKGROUNDS: InsertBackground[] = [
   {
     slug: "acolyte",
     name: "Acolyte",
@@ -312,7 +315,6 @@ const BACKGROUNDS = [
     equipment: ["Holy symbol", "Prayer book or prayer wheel", "5 sticks of incense", "Vestments", "Common clothes", "15 gp"],
     feature: { name: "Shelter of the Faithful", description: "You command the respect of those who share your faith, and can perform the religious ceremonies of your deity." },
     personalityTraits: ["I idolize a particular hero of my faith.", "I can find common ground between the fiercest enemies."],
-    idealOptions: ["Tradition: the ancient traditions of worship must be preserved and upheld."],
     ideals: ["Tradition: the ancient traditions of worship must be preserved."],
     bonds: ["I would die to recover an ancient relic of my faith."],
     flaws: ["I am inflexible in my thinking."],
@@ -390,7 +392,7 @@ const BACKGROUNDS = [
 ];
 
 // ──────────────────────────────── SPELLS ────────────────────────────────
-const SPELLS = [
+const SPELLS: InsertSpell[] = [
   {
     slug: "fire-bolt",
     name: "Fire Bolt",
@@ -641,7 +643,7 @@ const SPELLS = [
 ];
 
 // ──────────────────────────────── ITEMS ────────────────────────────────
-const ITEMS = [
+const ITEMS: InsertItem[] = [
   {
     slug: "longsword",
     name: "Longsword",
@@ -834,27 +836,27 @@ async function seed() {
 
   console.log("  Seeding backgrounds...");
   for (const bg of BACKGROUNDS) {
-    await db.insert(backgroundsTable).values(bg as any).onConflictDoUpdate({
+    await db.insert(backgroundsTable).values(bg).onConflictDoUpdate({
       target: backgroundsTable.slug,
-      set: bg as any,
+      set: bg,
     });
   }
   console.log(`  ✓ ${BACKGROUNDS.length} backgrounds seeded`);
 
   console.log("  Seeding spells...");
   for (const spell of SPELLS) {
-    await db.insert(spellsTable).values(spell as any).onConflictDoUpdate({
+    await db.insert(spellsTable).values(spell).onConflictDoUpdate({
       target: spellsTable.slug,
-      set: spell as any,
+      set: spell,
     });
   }
   console.log(`  ✓ ${SPELLS.length} spells seeded`);
 
   console.log("  Seeding items...");
   for (const item of ITEMS) {
-    await db.insert(itemsTable).values(item as any).onConflictDoUpdate({
+    await db.insert(itemsTable).values(item).onConflictDoUpdate({
       target: itemsTable.slug,
-      set: item as any,
+      set: item,
     });
   }
   console.log(`  ✓ ${ITEMS.length} items seeded`);

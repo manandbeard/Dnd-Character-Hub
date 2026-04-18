@@ -12,7 +12,14 @@ import {
   LevelUpCharacterParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import { computeDerivedStats, computeStartingMaxHp, computeAbilityModifier } from "../lib/rules-service";
+import {
+  computeDerivedStats,
+  computeStartingMaxHp,
+  computeAbilityModifier,
+  getClassBySlug,
+  getSpellcastingAbility,
+  getClassSavingThrows,
+} from "../lib/rules-service";
 
 const router: IRouter = Router();
 
@@ -23,7 +30,7 @@ function attachDerived(character: typeof charactersTable.$inferSelect) {
 
 // GET /characters — list user's characters
 router.get("/characters", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const characters = await db
     .select()
     .from(charactersTable)
@@ -34,7 +41,7 @@ router.get("/characters", requireAuth, async (req, res): Promise<void> => {
 
 // POST /characters — create a character
 router.post("/characters", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const parsed = CreateCharacterBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -44,41 +51,53 @@ router.post("/characters", requireAuth, async (req, res): Promise<void> => {
   const data = parsed.data;
   const constitutionMod = computeAbilityModifier(data.constitution);
 
-  // Compute starting HP based on a default hit die (Wizard=6 is minimum; we set 8 as fallback)
-  // The actual hit die should come from class data, but we store it in the character
-  const startingHp = Math.max(1, 8 + constitutionMod);
+  // Look up class rules data to get the proper hit die, saving throw profs, spellcasting
+  const classData = await getClassBySlug(data.class);
+  const hitDie = classData?.hitDie ?? 8; // fallback to d8 if class not found
+  const startingHp = computeStartingMaxHp(hitDie, constitutionMod);
 
-  const [character] = await db.insert(charactersTable).values({
-    userId,
-    name: data.name,
-    race: data.race,
-    subrace: data.subrace,
-    class: data.class,
-    background: data.background,
-    alignment: data.alignment,
-    strength: data.strength,
-    dexterity: data.dexterity,
-    constitution: data.constitution,
-    intelligence: data.intelligence,
-    wisdom: data.wisdom,
-    charisma: data.charisma,
-    maxHp: startingHp,
-    currentHp: startingHp,
-    skillProficiencies: data.skillProficiencies || [],
-    personalityTraits: data.personalityTraits || "",
-    ideals: data.ideals || "",
-    bonds: data.bonds || "",
-    flaws: data.flaws || "",
-    backstory: data.backstory || "",
-    appearance: data.appearance || "",
-  }).returning();
+  // Derive spellcasting ability and saving throw proficiencies from class rules
+  const spellcastingAbility = classData ? getSpellcastingAbility(classData) : null;
+  const classSavingThrows = classData ? getClassSavingThrows(classData) : [];
 
-  res.status(201).json(character);
+  try {
+    const [character] = await db.insert(charactersTable).values({
+      userId,
+      name: data.name,
+      race: data.race,
+      subrace: data.subrace ?? null,
+      class: data.class,
+      background: data.background,
+      alignment: data.alignment,
+      strength: data.strength,
+      dexterity: data.dexterity,
+      constitution: data.constitution,
+      intelligence: data.intelligence,
+      wisdom: data.wisdom,
+      charisma: data.charisma,
+      maxHp: startingHp,
+      currentHp: startingHp,
+      skillProficiencies: data.skillProficiencies ?? [],
+      savingThrowProficiencies: classSavingThrows,
+      spellcastingAbility,
+      personalityTraits: data.personalityTraits ?? "",
+      ideals: data.ideals ?? "",
+      bonds: data.bonds ?? "",
+      flaws: data.flaws ?? "",
+      backstory: data.backstory ?? "",
+      appearance: data.appearance ?? "",
+    }).returning();
+
+    res.status(201).json(character);
+  } catch (err) {
+    req.log.error({ err }, "Failed to insert character");
+    res.status(500).json({ error: "Internal server error", details: String(err) });
+  }
 });
 
 // GET /characters/:id — get single character with derived stats
 router.get("/characters/:id", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = GetCharacterParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -105,7 +124,7 @@ router.get("/characters/:id", requireAuth, async (req, res): Promise<void> => {
 
 // PATCH /characters/:id — update character
 router.patch("/characters/:id", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = UpdateCharacterParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -128,7 +147,7 @@ router.patch("/characters/:id", requireAuth, async (req, res): Promise<void> => 
 
   const [updated] = await db
     .update(charactersTable)
-    .set(parsed.data as any)
+    .set(parsed.data)
     .where(eq(charactersTable.id, params.data.id))
     .returning();
 
@@ -137,7 +156,7 @@ router.patch("/characters/:id", requireAuth, async (req, res): Promise<void> => 
 
 // DELETE /characters/:id
 router.delete("/characters/:id", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = DeleteCharacterParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -158,7 +177,7 @@ router.delete("/characters/:id", requireAuth, async (req, res): Promise<void> =>
 
 // GET /characters/:id/derived-stats
 router.get("/characters/:id/derived-stats", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = GetCharacterDerivedStatsParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -180,7 +199,7 @@ router.get("/characters/:id/derived-stats", requireAuth, async (req, res): Promi
 
 // POST /characters/:id/level-up
 router.post("/characters/:id/level-up", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as any).userId as string;
+  const { userId } = req;
   const params = LevelUpCharacterParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -212,42 +231,41 @@ router.post("/characters/:id/level-up", requireAuth, async (req, res): Promise<v
   const newMaxHp = existing.maxHp + hpGain;
 
   // Apply ability score improvements
-  const asiUpdates: Partial<typeof existing> = {};
+  type AbilityField = "strength" | "dexterity" | "constitution" | "intelligence" | "wisdom" | "charisma";
+  const ABILITY_FIELDS = new Set<string>(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]);
+  const asiUpdates: Partial<Record<AbilityField, number>> = {};
   if (data.abilityScoreImprovements) {
     for (const [ability, bonus] of Object.entries(data.abilityScoreImprovements)) {
-      const key = ability as keyof typeof existing;
-      if (typeof existing[key] === "number") {
-        (asiUpdates as any)[key] = Math.min(20, (existing[key] as number) + (bonus as number));
+      if (ABILITY_FIELDS.has(ability)) {
+        const key = ability as AbilityField;
+        asiUpdates[key] = Math.min(20, existing[key] + (bonus as number));
       }
     }
   }
 
   // Merge new features
-  const existingFeatures = (existing.features as object[]) || [];
+  const existingFeatures = Array.isArray(existing.features) ? (existing.features as unknown[]) : [];
   const newFeatures = data.newFeatures || [];
   const mergedFeatures = [...existingFeatures, ...newFeatures];
 
   // Merge new spells
-  const existingSpells = (existing.knownSpells as string[]) || [];
+  const existingSpells = Array.isArray(existing.knownSpells) ? (existing.knownSpells as string[]) : [];
   const newSpells = data.newSpells || [];
   const mergedSpells = [...new Set([...existingSpells, ...newSpells])];
 
-  const updateData: any = {
-    level: existing.level + 1,
-    maxHp: newMaxHp,
-    currentHp: existing.currentHp + hpGain, // restore HP on level-up
-    features: mergedFeatures,
-    knownSpells: mergedSpells,
-    ...asiUpdates,
-  };
-
-  if (data.subclass && !existing.subclass) {
-    updateData.subclass = data.subclass;
-  }
+  const subclassUpdate = data.subclass && !existing.subclass ? { subclass: data.subclass } : {};
 
   const [updated] = await db
     .update(charactersTable)
-    .set(updateData)
+    .set({
+      level: existing.level + 1,
+      maxHp: newMaxHp,
+      currentHp: existing.currentHp + hpGain,
+      features: mergedFeatures,
+      knownSpells: mergedSpells,
+      ...asiUpdates,
+      ...subclassUpdate,
+    })
     .where(eq(charactersTable.id, params.data.id))
     .returning();
 
