@@ -1105,6 +1105,11 @@ components:
           type: string
         appearance:
           type: string
+        startingEquipment:
+          type: array
+          description: Text descriptions of starting equipment to add to the character's inventory.
+          items:
+            type: string
       required:
         - name
         - race
@@ -1376,7 +1381,7 @@ components:
         startingEquipment:
           type: array
           items:
-            type: object
+            type: string
         features:
           type: array
           items:
@@ -1430,7 +1435,7 @@ components:
         equipment:
           type: array
           items:
-            type: object
+            type: string
         feature:
           type: object
         personalityTraits:

@@ -138,6 +138,12 @@ export const CreateCharacterBody = zod.object({
   flaws: zod.string().optional(),
   backstory: zod.string().optional(),
   appearance: zod.string().optional(),
+  startingEquipment: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Text descriptions of starting equipment to add to the character's inventory.",
+    ),
 });
 
 /**
@@ -677,7 +683,7 @@ export const ListClassesResponseItem = zod.object({
   armorProficiencies: zod.array(zod.string()),
   weaponProficiencies: zod.array(zod.string()),
   toolProficiencies: zod.array(zod.string()),
-  startingEquipment: zod.array(zod.object({}).passthrough()),
+  startingEquipment: zod.array(zod.string()),
   features: zod.array(zod.object({}).passthrough()),
   spellcasting: zod.object({}).passthrough(),
   description: zod.string().nullish(),
@@ -704,7 +710,7 @@ export const GetClassResponse = zod.object({
   armorProficiencies: zod.array(zod.string()),
   weaponProficiencies: zod.array(zod.string()),
   toolProficiencies: zod.array(zod.string()),
-  startingEquipment: zod.array(zod.object({}).passthrough()),
+  startingEquipment: zod.array(zod.string()),
   features: zod.array(zod.object({}).passthrough()),
   spellcasting: zod.object({}).passthrough(),
   description: zod.string().nullish(),
@@ -722,7 +728,7 @@ export const ListBackgroundsResponseItem = zod.object({
   skillProficiencies: zod.array(zod.string()),
   toolProficiencies: zod.array(zod.string()),
   languages: zod.array(zod.string()),
-  equipment: zod.array(zod.object({}).passthrough()),
+  equipment: zod.array(zod.string()),
   feature: zod.object({}).passthrough(),
   personalityTraits: zod.array(zod.string()),
   ideals: zod.array(zod.string()),
@@ -748,7 +754,7 @@ export const GetBackgroundResponse = zod.object({
   skillProficiencies: zod.array(zod.string()),
   toolProficiencies: zod.array(zod.string()),
   languages: zod.array(zod.string()),
-  equipment: zod.array(zod.object({}).passthrough()),
+  equipment: zod.array(zod.string()),
   feature: zod.object({}).passthrough(),
   personalityTraits: zod.array(zod.string()),
   ideals: zod.array(zod.string()),

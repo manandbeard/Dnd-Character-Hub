@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, charactersTable } from "@workspace/db";
+import { db, charactersTable, characterInventoryTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import {
   CreateCharacterBody,
@@ -17,8 +17,12 @@ import {
   computeStartingMaxHp,
   computeAbilityModifier,
   getClassBySlug,
+  getRaceBySlug,
+  getBackgroundBySlug,
   getSpellcastingAbility,
   getClassSavingThrows,
+  SKILLS,
+  type AbilityName,
 } from "../lib/rules-service";
 
 const router: IRouter = Router();
@@ -39,6 +43,8 @@ router.get("/characters", requireAuth, async (req, res): Promise<void> => {
   res.json(characters);
 });
 
+const ALL_SKILL_KEYS = Object.keys(SKILLS);
+
 // POST /characters — create a character
 router.post("/characters", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req;
@@ -49,11 +55,49 @@ router.post("/characters", requireAuth, async (req, res): Promise<void> => {
   }
 
   const data = parsed.data;
-  const constitutionMod = computeAbilityModifier(data.constitution);
 
-  // Look up class rules data to get the proper hit die, saving throw profs, spellcasting
-  const classData = await getClassBySlug(data.class);
-  const hitDie = classData?.hitDie ?? 8; // fallback to d8 if class not found
+  // Look up class, race, and background rules data in parallel
+  const [classData, raceData, bgData] = await Promise.all([
+    getClassBySlug(data.class),
+    getRaceBySlug(data.race),
+    getBackgroundBySlug(data.background),
+  ]);
+
+  // Validate skill proficiencies against class rules
+  const skillChoices = classData?.skillChoices as { choose?: number; from?: string[] } | null;
+  const allowedClassSkills = skillChoices?.from ?? ALL_SKILL_KEYS;
+  const maxClassSkills = skillChoices?.choose ?? 2;
+  const bgSkillProfs = (bgData?.skillProficiencies as string[] | null) ?? [];
+  const submittedSkills = data.skillProficiencies ?? [];
+  const classOnlySkills = submittedSkills.filter((s) => !bgSkillProfs.includes(s));
+  const invalidSkills = classOnlySkills.filter((s) => !allowedClassSkills.includes(s));
+  if (invalidSkills.length > 0) {
+    res.status(400).json({ error: `Invalid class skill choices: ${invalidSkills.join(", ")}` });
+    return;
+  }
+  if (classOnlySkills.length > maxClassSkills) {
+    res.status(400).json({
+      error: `Too many class skills selected. ${classData?.name ?? "This class"} allows ${maxClassSkills}.`,
+    });
+    return;
+  }
+
+  // Apply race ability bonuses server-side
+  const abilityBonuses = (raceData?.abilityBonuses as Partial<Record<AbilityName, number>> | null) ?? {};
+  const applyBonus = (base: number, key: AbilityName) =>
+    Math.min(20, base + (abilityBonuses[key] ?? 0));
+
+  const finalScores: Record<AbilityName, number> = {
+    strength: applyBonus(data.strength, "strength"),
+    dexterity: applyBonus(data.dexterity, "dexterity"),
+    constitution: applyBonus(data.constitution, "constitution"),
+    intelligence: applyBonus(data.intelligence, "intelligence"),
+    wisdom: applyBonus(data.wisdom, "wisdom"),
+    charisma: applyBonus(data.charisma, "charisma"),
+  };
+
+  const constitutionMod = computeAbilityModifier(finalScores.constitution);
+  const hitDie = classData?.hitDie ?? 8;
   const startingHp = computeStartingMaxHp(hitDie, constitutionMod);
 
   // Derive spellcasting ability and saving throw proficiencies from class rules
@@ -69,15 +113,10 @@ router.post("/characters", requireAuth, async (req, res): Promise<void> => {
       class: data.class,
       background: data.background,
       alignment: data.alignment,
-      strength: data.strength,
-      dexterity: data.dexterity,
-      constitution: data.constitution,
-      intelligence: data.intelligence,
-      wisdom: data.wisdom,
-      charisma: data.charisma,
+      ...finalScores,
       maxHp: startingHp,
       currentHp: startingHp,
-      skillProficiencies: data.skillProficiencies ?? [],
+      skillProficiencies: submittedSkills,
       savingThrowProficiencies: classSavingThrows,
       spellcastingAbility,
       personalityTraits: data.personalityTraits ?? "",
@@ -87,6 +126,22 @@ router.post("/characters", requireAuth, async (req, res): Promise<void> => {
       backstory: data.backstory ?? "",
       appearance: data.appearance ?? "",
     }).returning();
+
+    // Seed starting equipment inventory items
+    if (data.startingEquipment && data.startingEquipment.length > 0) {
+      const inventoryItems = data.startingEquipment.map((item, idx) => ({
+        characterId: character.id,
+        itemSlug: `starting-equipment-${idx + 1}`,
+        name: item,
+        quantity: 1,
+        equipped: false,
+        attuned: false,
+        notes: "Starting equipment",
+        customProperties: {},
+        isCustom: true,
+      }));
+      await db.insert(characterInventoryTable).values(inventoryItems);
+    }
 
     res.status(201).json(character);
   } catch (err) {

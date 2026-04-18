@@ -160,6 +160,8 @@ export interface CreateCharacterBody {
   flaws?: string;
   backstory?: string;
   appearance?: string;
+  /** Text descriptions of starting equipment to add to the character's inventory. */
+  startingEquipment?: string[];
 }
 
 export type UpdateCharacterBodySpellSlots = {
@@ -274,8 +276,6 @@ export interface RaceRef {
 
 export type ClassRefSkillChoices = { [key: string]: unknown };
 
-export type ClassRefStartingEquipmentItem = { [key: string]: unknown };
-
 export type ClassRefFeaturesItem = { [key: string]: unknown };
 
 export type ClassRefSpellcasting = { [key: string]: unknown };
@@ -294,15 +294,13 @@ export interface ClassRef {
   armorProficiencies: string[];
   weaponProficiencies: string[];
   toolProficiencies: string[];
-  startingEquipment: ClassRefStartingEquipmentItem[];
+  startingEquipment: string[];
   features: ClassRefFeaturesItem[];
   spellcasting: ClassRefSpellcasting;
   /** @nullable */
   description?: string | null;
   rawData: ClassRefRawData;
 }
-
-export type BackgroundRefEquipmentItem = { [key: string]: unknown };
 
 export type BackgroundRefFeature = { [key: string]: unknown };
 
@@ -316,7 +314,7 @@ export interface BackgroundRef {
   skillProficiencies: string[];
   toolProficiencies: string[];
   languages: string[];
-  equipment: BackgroundRefEquipmentItem[];
+  equipment: string[];
   feature: BackgroundRefFeature;
   personalityTraits: string[];
   ideals: string[];

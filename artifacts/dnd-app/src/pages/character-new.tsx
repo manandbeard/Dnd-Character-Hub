@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ function modifier(score: number) {
   return m >= 0 ? `+${m}` : String(m);
 }
 
-const STEPS = ["Identity", "Ability Scores", "Background", "Skills", "Review"];
+const STEPS = ["Identity", "Ability Scores", "Background", "Skills", "Equipment", "Review"];
 
 function rollAbilityScore() {
   const dice = [1, 2, 3, 4].map(() => Math.floor(Math.random() * 6) + 1);
@@ -75,6 +75,7 @@ interface FormState {
   flaws: string;
   backstory: string;
   skillProficiencies: string[];
+  selectedStartingEquipment: string[];
 }
 
 export default function CharacterNew() {
@@ -101,6 +102,7 @@ export default function CharacterNew() {
     flaws: "",
     backstory: "",
     skillProficiencies: [],
+    selectedStartingEquipment: [],
   });
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -133,11 +135,24 @@ export default function CharacterNew() {
     });
   }
 
+  function toggleEquipmentItem(item: string) {
+    setForm((prev) => {
+      const already = prev.selectedStartingEquipment.includes(item);
+      return {
+        ...prev,
+        selectedStartingEquipment: already
+          ? prev.selectedStartingEquipment.filter((e) => e !== item)
+          : [...prev.selectedStartingEquipment, item],
+      };
+    });
+  }
+
   function canProceed() {
     if (step === 0) return form.name.trim() && form.race && form.class;
     if (step === 1) return ABILITIES.every((a) => form.scores[a] >= 1 && form.scores[a] <= 20);
     if (step === 2) return !!form.background;
     if (step === 3) return true; // skills are optional
+    if (step === 4) return true; // equipment choices are optional
     return true;
   }
 
@@ -157,6 +172,7 @@ export default function CharacterNew() {
           flaws: form.flaws,
           backstory: form.backstory,
           skillProficiencies: form.skillProficiencies,
+          startingEquipment: form.selectedStartingEquipment,
         },
       },
       {
@@ -186,6 +202,16 @@ export default function CharacterNew() {
 
   // Skills selected by the player as class choices (excluding bg-granted)
   const classChosenSkills = form.skillProficiencies.filter((s) => !bgSkills.includes(s));
+
+  // Pre-populate starting equipment with all class items when entering equipment step
+  useEffect(() => {
+    if (step === 4 && selectedClass && form.selectedStartingEquipment.length === 0) {
+      const classEquipment = selectedClass.startingEquipment ?? [];
+      if (classEquipment.length > 0) {
+        setForm((prev) => ({ ...prev, selectedStartingEquipment: [...classEquipment] }));
+      }
+    }
+  }, [step, selectedClass]);
 
   function finalScore(ability: AbilityKey) {
     const bonus = (selectedRace?.abilityBonuses as Record<string, number> | null)?.[ability] ?? 0;
@@ -499,8 +525,66 @@ export default function CharacterNew() {
           </div>
         )}
 
-        {/* Step 4: Review */}
+        {/* Step 4: Equipment */}
         {step === 4 && (
+          <div className="space-y-5">
+            <h2 className="font-serif text-2xl font-bold">Starting Equipment</h2>
+            <p className="text-sm text-muted-foreground">
+              Select the equipment your character begins with. Toggle items to customize your starting kit.
+            </p>
+
+            {selectedClass && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">{selectedClass.name} Starting Equipment</p>
+                <div className="space-y-2">
+                  {(selectedClass.startingEquipment as string[] | null ?? []).map((item) => {
+                    const isSelected = form.selectedStartingEquipment.includes(item);
+                    return (
+                      <div
+                        key={item}
+                        className={cn(
+                          "flex items-center gap-3 rounded-md px-3 py-2.5 border cursor-pointer transition-colors",
+                          isSelected ? "bg-primary/10 border-primary/30" : "border-border hover:bg-accent/20"
+                        )}
+                        onClick={() => toggleEquipmentItem(item)}
+                        data-testid={`equipment-item-${item.slice(0, 20).replace(/\s+/g, "-")}`}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleEquipmentItem(item)}
+                          className="pointer-events-none"
+                        />
+                        <span className="text-sm">{item}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {selectedBg && (selectedBg.equipment as string[] | null ?? []).length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Background Equipment (auto-included)</p>
+                <Card className="bg-muted/20">
+                  <CardContent className="p-3">
+                    <ul className="text-sm space-y-1">
+                      {(selectedBg.equipment as string[]).map((item) => (
+                        <li key={item} className="text-muted-foreground">• {item}</li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {form.selectedStartingEquipment.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">No class equipment selected. You can add items from the inventory on your character sheet.</p>
+            )}
+          </div>
+        )}
+
+        {/* Step 5: Review */}
+        {step === 5 && (
           <div className="space-y-5">
             <h2 className="font-serif text-2xl font-bold">Review</h2>
             <div className="bg-card border border-border rounded-lg p-5 space-y-4">
