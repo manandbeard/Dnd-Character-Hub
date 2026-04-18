@@ -63,11 +63,25 @@ router.post("/characters", requireAuth, async (req, res): Promise<void> => {
     getBackgroundBySlug(data.background),
   ]);
 
+  // Validate that class, race, and background exist in rules data
+  if (!classData) {
+    res.status(400).json({ error: `Unknown class: "${data.class}"` });
+    return;
+  }
+  if (!raceData) {
+    res.status(400).json({ error: `Unknown race: "${data.race}"` });
+    return;
+  }
+  if (!bgData) {
+    res.status(400).json({ error: `Unknown background: "${data.background}"` });
+    return;
+  }
+
   // Validate skill proficiencies against class rules
-  const skillChoices = classData?.skillChoices as { choose?: number; from?: string[] } | null;
+  const skillChoices = classData.skillChoices as { choose?: number; from?: string[] } | null;
   const allowedClassSkills = skillChoices?.from ?? ALL_SKILL_KEYS;
   const maxClassSkills = skillChoices?.choose ?? 2;
-  const bgSkillProfs = (bgData?.skillProficiencies as string[] | null) ?? [];
+  const bgSkillProfs = (bgData.skillProficiencies as string[] | null) ?? [];
   const submittedSkills = data.skillProficiencies ?? [];
   const classOnlySkills = submittedSkills.filter((s) => !bgSkillProfs.includes(s));
   const invalidSkills = classOnlySkills.filter((s) => !allowedClassSkills.includes(s));
