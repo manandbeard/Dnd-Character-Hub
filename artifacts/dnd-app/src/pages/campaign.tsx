@@ -30,10 +30,14 @@ import {
   useRefreshInviteCode,
   useDeleteCampaign,
   useRemoveCampaignMember,
+  useListCharacters,
+  useAttachCharacterToCampaign,
+  useDetachCharacterFromCampaign,
   getGetCampaignQueryKey,
   getListPartyItemsQueryKey,
   getListLedgerEntriesQueryKey,
   getListCampaignsQueryKey,
+  getListCampaignCharactersQueryKey,
   useListCampaigns,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -104,6 +108,7 @@ export default function CampaignPage({ id }: Props) {
   const { data: characters } = useListCampaignCharacters(id);
   const { data: partyItems } = useListPartyItems(id);
   const { data: ledger } = useListLedgerEntries(id, { limit: 100, offset: 0 });
+  const { data: myCharacters } = useListCharacters();
 
   const addItemMutation = useAddPartyItem();
   const removeItemMutation = useRemovePartyItem();
@@ -114,6 +119,8 @@ export default function CampaignPage({ id }: Props) {
   const refreshCodeMutation = useRefreshInviteCode();
   const deleteCampaignMutation = useDeleteCampaign();
   const removeMemberMutation = useRemoveCampaignMember();
+  const attachCharacterMutation = useAttachCharacterToCampaign();
+  const detachCharacterMutation = useDetachCharacterFromCampaign();
 
   const isDm = campaign?.dmUserId === user?.id;
 
@@ -136,6 +143,10 @@ export default function CampaignPage({ id }: Props) {
 
   // Item search
   const [itemSearch, setItemSearch] = useState("");
+
+  // Attach character dialog
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [attachCharId, setAttachCharId] = useState<string>("");
 
   const filteredItems = (partyItems ?? []).filter((item) =>
     item.name.toLowerCase().includes(itemSearch.toLowerCase())
@@ -289,6 +300,34 @@ export default function CampaignPage({ id }: Props) {
     }
   }
 
+  async function handleAttachCharacter(e: React.FormEvent) {
+    e.preventDefault();
+    if (!attachCharId) return;
+    try {
+      await attachCharacterMutation.mutateAsync({
+        id,
+        data: { characterId: Number(attachCharId) },
+      });
+      await queryClient.invalidateQueries({ queryKey: getListCampaignCharactersQueryKey(id) });
+      toast({ title: "Character attached to campaign" });
+      setAttachOpen(false);
+      setAttachCharId("");
+    } catch {
+      toast({ title: "Failed to attach character", variant: "destructive" });
+    }
+  }
+
+  async function handleDetachCharacter(characterId: number, name: string) {
+    if (!confirm(`Remove "${name}" from this campaign?`)) return;
+    try {
+      await detachCharacterMutation.mutateAsync({ id, characterId });
+      await queryClient.invalidateQueries({ queryKey: getListCampaignCharactersQueryKey(id) });
+      toast({ title: "Character removed from campaign" });
+    } catch {
+      toast({ title: "Failed to remove character", variant: "destructive" });
+    }
+  }
+
   function copyInviteCode() {
     if (campaign) {
       navigator.clipboard.writeText(campaign.inviteCode);
@@ -409,9 +448,20 @@ export default function CampaignPage({ id }: Props) {
 
               {/* Party characters */}
               <div>
-                <h2 className="font-serif text-lg font-semibold mb-3">Party Characters</h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-serif text-lg font-semibold">Party Characters</h2>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setAttachCharId(""); setAttachOpen(true); }}
+                    data-testid="button-attach-character"
+                  >
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Attach Character
+                  </Button>
+                </div>
                 {!characters || characters.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No characters attached yet. Visit a character sheet to attach.</p>
+                  <p className="text-sm text-muted-foreground">No characters attached yet. Click "Attach Character" to add one of yours.</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {characters.map((char) => {
@@ -431,7 +481,25 @@ export default function CampaignPage({ id }: Props) {
                                     Level {char.level} {char.race} {char.class}
                                   </p>
                                 </div>
-                                <Badge variant="secondary" className="text-xs">Lv.{char.level}</Badge>
+                                <div className="flex items-center gap-1">
+                                  <Badge variant="secondary" className="text-xs">Lv.{char.level}</Badge>
+                                  {(isDm || char.userId === user?.id) && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDetachCharacter(char.id, char.name);
+                                      }}
+                                      data-testid={`button-detach-character-${char.id}`}
+                                      title="Remove from campaign"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                                 <div className="bg-muted rounded p-1.5">
@@ -759,6 +827,55 @@ export default function CampaignPage({ id }: Props) {
               <Button type="button" variant="outline" onClick={() => setDepositOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={depositMutation.isPending} data-testid="button-confirm-deposit">
                 {depositMutation.isPending ? "Depositing…" : "Deposit"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Attach Character Dialog */}
+      <Dialog open={attachOpen} onOpenChange={setAttachOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Attach Character to Campaign</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAttachCharacter} className="space-y-4">
+            {(() => {
+              const attached = new Set((characters ?? []).map((c) => c.id));
+              const available = (myCharacters ?? []).filter((c) => !attached.has(c.id));
+              if (available.length === 0) {
+                return (
+                  <p className="text-sm text-muted-foreground">
+                    All your characters are already attached, or you haven't created any yet.
+                  </p>
+                );
+              }
+              return (
+                <div>
+                  <Label>Character</Label>
+                  <Select value={attachCharId} onValueChange={setAttachCharId}>
+                    <SelectTrigger className="mt-1.5" data-testid="select-attach-character">
+                      <SelectValue placeholder="Select a character…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {available.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.name} — Lv.{c.level} {c.race} {c.class}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })()}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setAttachOpen(false)}>Cancel</Button>
+              <Button
+                type="submit"
+                disabled={attachCharacterMutation.isPending || !attachCharId}
+                data-testid="button-confirm-attach-character"
+              >
+                {attachCharacterMutation.isPending ? "Attaching…" : "Attach"}
               </Button>
             </div>
           </form>
