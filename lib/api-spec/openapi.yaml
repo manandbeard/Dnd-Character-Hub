@@ -3,13 +3,30 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: D&D Character Builder API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User profile operations
+  - name: characters
+    description: Character CRUD and sheet operations
+  - name: races
+    description: SRD race reference data
+  - name: classes
+    description: SRD class reference data
+  - name: backgrounds
+    description: SRD background reference data
+  - name: spells
+    description: SRD spell reference data
+  - name: items
+    description: SRD item reference data
+  - name: inventory
+    description: Character inventory operations
+
 paths:
   /healthz:
     get:
@@ -24,7 +41,705 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Users ──────────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      security:
+        - clerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Characters ──────────────────────────────────────────────────────────────
+  /characters:
+    get:
+      operationId: listCharacters
+      tags: [characters]
+      summary: List characters for current user
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: List of characters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Character"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createCharacter
+      tags: [characters]
+      summary: Create a new character
+      security:
+        - clerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCharacterBody"
+      responses:
+        "201":
+          description: Created character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /characters/{id}:
+    get:
+      operationId: getCharacter
+      tags: [characters]
+      summary: Get character by ID
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CharacterWithDerived"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateCharacter
+      tags: [characters]
+      summary: Update character fields
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCharacterBody"
+      responses:
+        "200":
+          description: Updated character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CharacterWithDerived"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteCharacter
+      tags: [characters]
+      summary: Delete a character
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /characters/{id}/derived-stats:
+    get:
+      operationId: getCharacterDerivedStats
+      tags: [characters]
+      summary: Get computed derived stats for a character
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Derived stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DerivedStats"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /characters/{id}/level-up:
+    post:
+      operationId: levelUpCharacter
+      tags: [characters]
+      summary: Level up a character
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LevelUpBody"
+      responses:
+        "200":
+          description: Updated character after level-up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CharacterWithDerived"
+        "400":
+          description: Invalid level-up data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Character Inventory ─────────────────────────────────────────────────────
+  /characters/{id}/inventory:
+    get:
+      operationId: listCharacterInventory
+      tags: [inventory]
+      summary: List character inventory
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: addInventoryItem
+      tags: [inventory]
+      summary: Add item to character inventory
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddInventoryItemBody"
+      responses:
+        "201":
+          description: Added item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /characters/{id}/inventory/{itemId}:
+    patch:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      summary: Update inventory item (quantity, equipped, attuned, notes)
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryItemBody"
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeInventoryItem
+      tags: [inventory]
+      summary: Remove item from inventory
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Races ───────────────────────────────────────────────────────────────────
+  /races:
+    get:
+      operationId: listRaces
+      tags: [races]
+      summary: List all races
+      responses:
+        "200":
+          description: List of races
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RaceRef"
+
+  /races/{slug}:
+    get:
+      operationId: getRace
+      tags: [races]
+      summary: Get race by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Race
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RaceRef"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Classes ─────────────────────────────────────────────────────────────────
+  /classes:
+    get:
+      operationId: listClasses
+      tags: [classes]
+      summary: List all classes
+      responses:
+        "200":
+          description: List of classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClassRef"
+
+  /classes/{slug}:
+    get:
+      operationId: getClass
+      tags: [classes]
+      summary: Get class by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassRef"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Backgrounds ─────────────────────────────────────────────────────────────
+  /backgrounds:
+    get:
+      operationId: listBackgrounds
+      tags: [backgrounds]
+      summary: List all backgrounds
+      responses:
+        "200":
+          description: List of backgrounds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BackgroundRef"
+
+  /backgrounds/{slug}:
+    get:
+      operationId: getBackground
+      tags: [backgrounds]
+      summary: Get background by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Background
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackgroundRef"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Spells ──────────────────────────────────────────────────────────────────
+  /spells:
+    get:
+      operationId: listSpells
+      tags: [spells]
+      summary: List all spells (with optional filters)
+      parameters:
+        - name: class
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: level
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: school
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of spells
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpellRef"
+
+  /spells/{slug}:
+    get:
+      operationId: getSpell
+      tags: [spells]
+      summary: Get spell by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Spell
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpellRef"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Items ───────────────────────────────────────────────────────────────────
+  /items:
+    get:
+      operationId: listItems
+      tags: [items]
+      summary: List all items (with optional filters)
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: rarity
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemRef"
+
+  /items/{slug}:
+    get:
+      operationId: getItem
+      tags: [items]
+      summary: Get item by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemRef"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
+  securitySchemes:
+    clerkAuth:
+      type: http
+      scheme: bearer
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +749,831 @@ components:
       required:
         - status
 
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    # ── Users ──────────────────────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        theme:
+          type: string
+        timezone:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - theme
+        - timezone
+        - createdAt
+        - updatedAt
+
+    UpdateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        theme:
+          type: string
+        timezone:
+          type: string
+
+    # ── Characters ─────────────────────────────────────────────────────────
+    Character:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        name:
+          type: string
+        race:
+          type: string
+        subrace:
+          type: ["string", "null"]
+        class:
+          type: string
+        subclass:
+          type: ["string", "null"]
+        background:
+          type: string
+        alignment:
+          type: string
+        level:
+          type: integer
+        experience:
+          type: integer
+        inspiration:
+          type: boolean
+        strength:
+          type: integer
+        dexterity:
+          type: integer
+        constitution:
+          type: integer
+        intelligence:
+          type: integer
+        wisdom:
+          type: integer
+        charisma:
+          type: integer
+        maxHp:
+          type: integer
+        currentHp:
+          type: integer
+        temporaryHp:
+          type: integer
+        armorClass:
+          type: integer
+        speed:
+          type: integer
+        initiativeBonus:
+          type: integer
+        skillProficiencies:
+          type: array
+          items:
+            type: string
+        savingThrowProficiencies:
+          type: array
+          items:
+            type: string
+        toolProficiencies:
+          type: array
+          items:
+            type: string
+        weaponProficiencies:
+          type: array
+          items:
+            type: string
+        armorProficiencies:
+          type: array
+          items:
+            type: string
+        languageProficiencies:
+          type: array
+          items:
+            type: string
+        deathSaveSuccesses:
+          type: integer
+        deathSaveFailures:
+          type: integer
+        spellcastingAbility:
+          type: ["string", "null"]
+        preparedSpells:
+          type: array
+          items:
+            type: string
+        knownSpells:
+          type: array
+          items:
+            type: string
+        spellSlots:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              max:
+                type: integer
+              used:
+                type: integer
+        cp:
+          type: integer
+        sp:
+          type: integer
+        ep:
+          type: integer
+        gp:
+          type: integer
+        pp:
+          type: integer
+        personalityTraits:
+          type: string
+        ideals:
+          type: string
+        bonds:
+          type: string
+        flaws:
+          type: string
+        backstory:
+          type: string
+        notes:
+          type: string
+        appearance:
+          type: string
+        features:
+          type: array
+          items:
+            type: object
+        conditions:
+          type: array
+          items:
+            type: string
+        avatarUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - name
+        - race
+        - class
+        - background
+        - alignment
+        - level
+        - experience
+        - inspiration
+        - strength
+        - dexterity
+        - constitution
+        - intelligence
+        - wisdom
+        - charisma
+        - maxHp
+        - currentHp
+        - temporaryHp
+        - armorClass
+        - speed
+        - initiativeBonus
+        - skillProficiencies
+        - savingThrowProficiencies
+        - toolProficiencies
+        - weaponProficiencies
+        - armorProficiencies
+        - languageProficiencies
+        - deathSaveSuccesses
+        - deathSaveFailures
+        - preparedSpells
+        - knownSpells
+        - spellSlots
+        - cp
+        - sp
+        - ep
+        - gp
+        - pp
+        - personalityTraits
+        - ideals
+        - bonds
+        - flaws
+        - backstory
+        - notes
+        - appearance
+        - features
+        - conditions
+        - createdAt
+        - updatedAt
+
+    DerivedStats:
+      type: object
+      properties:
+        proficiencyBonus:
+          type: integer
+        strengthMod:
+          type: integer
+        dexterityMod:
+          type: integer
+        constitutionMod:
+          type: integer
+        intelligenceMod:
+          type: integer
+        wisdomMod:
+          type: integer
+        charismaMod:
+          type: integer
+        skills:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              mod:
+                type: integer
+              proficient:
+                type: boolean
+        savingThrows:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              mod:
+                type: integer
+              proficient:
+                type: boolean
+        passivePerception:
+          type: integer
+        passiveInsight:
+          type: integer
+        passiveInvestigation:
+          type: integer
+        spellSaveDC:
+          type: ["integer", "null"]
+        spellAttackBonus:
+          type: ["integer", "null"]
+        initiative:
+          type: integer
+        carryCapacity:
+          type: integer
+      required:
+        - proficiencyBonus
+        - strengthMod
+        - dexterityMod
+        - constitutionMod
+        - intelligenceMod
+        - wisdomMod
+        - charismaMod
+        - skills
+        - savingThrows
+        - passivePerception
+        - passiveInsight
+        - passiveInvestigation
+        - initiative
+        - carryCapacity
+
+    CharacterWithDerived:
+      allOf:
+        - $ref: "#/components/schemas/Character"
+        - type: object
+          properties:
+            derived:
+              $ref: "#/components/schemas/DerivedStats"
+          required:
+            - derived
+
+    CreateCharacterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        race:
+          type: string
+        subrace:
+          type: string
+        class:
+          type: string
+        background:
+          type: string
+        alignment:
+          type: string
+        strength:
+          type: integer
+        dexterity:
+          type: integer
+        constitution:
+          type: integer
+        intelligence:
+          type: integer
+        wisdom:
+          type: integer
+        charisma:
+          type: integer
+        skillProficiencies:
+          type: array
+          items:
+            type: string
+        personalityTraits:
+          type: string
+        ideals:
+          type: string
+        bonds:
+          type: string
+        flaws:
+          type: string
+        backstory:
+          type: string
+        appearance:
+          type: string
+      required:
+        - name
+        - race
+        - class
+        - background
+        - alignment
+        - strength
+        - dexterity
+        - constitution
+        - intelligence
+        - wisdom
+        - charisma
+
+    UpdateCharacterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        alignment:
+          type: string
+        currentHp:
+          type: integer
+        temporaryHp:
+          type: integer
+        maxHp:
+          type: integer
+        armorClass:
+          type: integer
+        speed:
+          type: integer
+        inspiration:
+          type: boolean
+        experience:
+          type: integer
+        strength:
+          type: integer
+        dexterity:
+          type: integer
+        constitution:
+          type: integer
+        intelligence:
+          type: integer
+        wisdom:
+          type: integer
+        charisma:
+          type: integer
+        deathSaveSuccesses:
+          type: integer
+        deathSaveFailures:
+          type: integer
+        personalityTraits:
+          type: string
+        ideals:
+          type: string
+        bonds:
+          type: string
+        flaws:
+          type: string
+        backstory:
+          type: string
+        notes:
+          type: string
+        appearance:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        preparedSpells:
+          type: array
+          items:
+            type: string
+        knownSpells:
+          type: array
+          items:
+            type: string
+        spellSlots:
+          type: object
+          additionalProperties:
+            type: object
+        cp:
+          type: integer
+        sp:
+          type: integer
+        ep:
+          type: integer
+        gp:
+          type: integer
+        pp:
+          type: integer
+        avatarUrl:
+          type: string
+
+    LevelUpBody:
+      type: object
+      properties:
+        hpIncrease:
+          type: integer
+        newFeatures:
+          type: array
+          items:
+            type: object
+        abilityScoreImprovements:
+          type: object
+          additionalProperties:
+            type: integer
+        newSpells:
+          type: array
+          items:
+            type: string
+        subclass:
+          type: string
+      required:
+        - hpIncrease
+
+    # ── Inventory ─────────────────────────────────────────────────────────
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        characterId:
+          type: integer
+        itemSlug:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+        equipped:
+          type: boolean
+        attuned:
+          type: boolean
+        notes:
+          type: string
+        isCustom:
+          type: boolean
+        customProperties:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - characterId
+        - itemSlug
+        - name
+        - quantity
+        - equipped
+        - attuned
+        - notes
+        - isCustom
+        - customProperties
+        - createdAt
+        - updatedAt
+
+    AddInventoryItemBody:
+      type: object
+      properties:
+        itemSlug:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+        notes:
+          type: string
+        isCustom:
+          type: boolean
+        customProperties:
+          type: object
+      required:
+        - itemSlug
+        - name
+
+    UpdateInventoryItemBody:
+      type: object
+      properties:
+        quantity:
+          type: integer
+        equipped:
+          type: boolean
+        attuned:
+          type: boolean
+        notes:
+          type: string
+
+    # ── Rules Reference ────────────────────────────────────────────────────
+    RaceRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        source:
+          type: string
+        speed:
+          type: integer
+        abilityBonuses:
+          type: object
+        traits:
+          type: array
+          items:
+            type: object
+        languages:
+          type: array
+          items:
+            type: string
+        size:
+          type: string
+        darkvision:
+          type: integer
+        description:
+          type: ["string", "null"]
+        rawData:
+          type: object
+      required:
+        - id
+        - slug
+        - name
+        - source
+        - speed
+        - abilityBonuses
+        - traits
+        - languages
+        - size
+        - darkvision
+        - rawData
+
+    ClassRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        source:
+          type: string
+        hitDie:
+          type: integer
+        primaryAbility:
+          type: string
+        savingThrows:
+          type: array
+          items:
+            type: string
+        skillChoices:
+          type: object
+        armorProficiencies:
+          type: array
+          items:
+            type: string
+        weaponProficiencies:
+          type: array
+          items:
+            type: string
+        toolProficiencies:
+          type: array
+          items:
+            type: string
+        startingEquipment:
+          type: array
+          items:
+            type: object
+        features:
+          type: array
+          items:
+            type: object
+        spellcasting:
+          type: object
+        description:
+          type: ["string", "null"]
+        rawData:
+          type: object
+      required:
+        - id
+        - slug
+        - name
+        - source
+        - hitDie
+        - primaryAbility
+        - savingThrows
+        - skillChoices
+        - armorProficiencies
+        - weaponProficiencies
+        - toolProficiencies
+        - startingEquipment
+        - features
+        - spellcasting
+        - rawData
+
+    BackgroundRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        source:
+          type: string
+        skillProficiencies:
+          type: array
+          items:
+            type: string
+        toolProficiencies:
+          type: array
+          items:
+            type: string
+        languages:
+          type: array
+          items:
+            type: string
+        equipment:
+          type: array
+          items:
+            type: object
+        feature:
+          type: object
+        personalityTraits:
+          type: array
+          items:
+            type: string
+        ideals:
+          type: array
+          items:
+            type: string
+        bonds:
+          type: array
+          items:
+            type: string
+        flaws:
+          type: array
+          items:
+            type: string
+        description:
+          type: ["string", "null"]
+        rawData:
+          type: object
+      required:
+        - id
+        - slug
+        - name
+        - source
+        - skillProficiencies
+        - toolProficiencies
+        - languages
+        - equipment
+        - feature
+        - personalityTraits
+        - ideals
+        - bonds
+        - flaws
+        - rawData
+
+    SpellRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        source:
+          type: string
+        level:
+          type: integer
+        school:
+          type: string
+        castingTime:
+          type: string
+        range:
+          type: string
+        components:
+          type: array
+          items:
+            type: string
+        duration:
+          type: string
+        concentration:
+          type: boolean
+        ritual:
+          type: boolean
+        description:
+          type: string
+        higherLevel:
+          type: ["string", "null"]
+        classes:
+          type: array
+          items:
+            type: string
+        damageType:
+          type: ["string", "null"]
+        saveType:
+          type: ["string", "null"]
+        rawData:
+          type: object
+      required:
+        - id
+        - slug
+        - name
+        - source
+        - level
+        - school
+        - castingTime
+        - range
+        - components
+        - duration
+        - concentration
+        - ritual
+        - description
+        - classes
+        - rawData
+
+    ItemRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        source:
+          type: string
+        type:
+          type: string
+        rarity:
+          type: string
+        weight:
+          type: ["string", "null"]
+        cost:
+          type: object
+        requiresAttunement:
+          type: boolean
+        attunementRequirements:
+          type: ["string", "null"]
+        armorClass:
+          type: ["integer", "null"]
+        damageRoll:
+          type: ["string", "null"]
+        damageType:
+          type: ["string", "null"]
+        properties:
+          type: array
+          items:
+            type: string
+        description:
+          type: ["string", "null"]
+        rawData:
+          type: object
+      required:
+        - id
+        - slug
+        - name
+        - source
+        - type
+        - rarity
+        - requiresAttunement
+        - cost
+        - properties
+        - rawData

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "D&D Character Builder"
+version = "1.0.0"
+id = "artifacts/dnd-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18703
+
+[services.development]
+run = "PORT=18703 BASE_PATH=/ pnpm --filter @workspace/dnd-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/dnd-app", "run", "build" ]
+publicDir = "artifacts/dnd-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18703"
+BASE_PATH = "/"
