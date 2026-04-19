@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "FDZu4UWLN4n6cdkJyr9LE"
+uri = "file://artifacts/mockup-sandbox/public/images/tavern-hero.png"
+type = "image"
+title = "floating d20s runic backdrop"
+
+[[generated]]
+id = "IkYuvxClz5bKK9A1-l9n0"
+uri = "file://artifacts/mockup-sandbox/public/images/quill-hero.png"
+type = "image"
+title = "tavern table with d20s"

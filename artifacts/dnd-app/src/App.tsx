@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
+import SignInPage from "@/pages/sign-in";
 import Characters from "@/pages/characters";
 import CharacterNew from "@/pages/character-new";
 import CharacterSheet from "@/pages/character-sheet";
@@ -54,6 +55,9 @@ function Router() {
     <Switch>
       <Route path="/">
         {isLoaded && isSignedIn ? <Redirect to="/characters" /> : <Landing />}
+      </Route>
+      <Route path="/sign-in">
+        {isLoaded && isSignedIn ? <Redirect to="/characters" /> : <SignInPage />}
       </Route>
       <Route path="/characters">
         <AuthGuard><Characters /></AuthGuard>
