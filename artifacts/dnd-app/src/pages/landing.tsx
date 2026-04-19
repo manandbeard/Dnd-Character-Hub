@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSignIn } from "@clerk/react";
 import { Link } from "wouter";
 import { Shield, Swords, Map, ScrollText, Users } from "lucide-react";
@@ -5,15 +6,25 @@ import { Button } from "@/components/ui/button";
 
 export default function Landing() {
   const { signIn, isLoaded } = useSignIn();
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
-  const handleGoogle = () => {
+  const handleGoogle = async () => {
     if (!isLoaded || !signIn) return;
+    setOauthError(null);
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-    void signIn.authenticateWithRedirect({
-      strategy: "oauth_google",
-      redirectUrl: `${base}/sso-callback`,
-      redirectUrlComplete: `${base}/characters`,
-    });
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: `${base}/sso-callback`,
+        redirectUrlComplete: `${base}/characters`,
+      });
+    } catch (err: unknown) {
+      const msg =
+        (err as { errors?: Array<{ message?: string }>; message?: string })?.errors?.[0]?.message ??
+        (err as { message?: string })?.message ??
+        "Google sign-in is unavailable. The site owner may need to enable Google in their Clerk dashboard.";
+      setOauthError(msg);
+    }
   };
 
   return (
@@ -53,6 +64,20 @@ export default function Landing() {
             </svg>
             Continue with Google
           </Button>
+
+          {oauthError && (
+            <p
+              role="alert"
+              data-testid="text-oauth-error"
+              className="mt-3 text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg p-2 leading-snug"
+            >
+              {oauthError}
+            </p>
+          )}
+
+          <p className="mt-3 text-[11px] text-slate-500 text-center md:text-left leading-snug">
+            Requires Google enabled in this app's Clerk dashboard.
+          </p>
 
           <div className="mt-6 text-center">
             <Link
