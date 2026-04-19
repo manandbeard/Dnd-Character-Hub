@@ -47,6 +47,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/three": "^0.184.0",
     "@vitejs/plugin-react": "catalog:",
     "@workspace/api-client-react": "workspace:*",
     "class-variance-authority": "catalog:",
@@ -75,6 +76,9 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@clerk/react": "^6.4.2"
+    "@clerk/react": "^6.4.2",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.0",
+    "three": "^0.184.0"
   }
 }

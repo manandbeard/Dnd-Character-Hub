@@ -3,6 +3,7 @@ import { useSignIn } from "@clerk/react";
 import { Link } from "wouter";
 import { Shield, Swords, Map, ScrollText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dice3D } from "@/components/Dice3D";
 
 export default function Landing() {
   const { signIn, isLoaded } = useSignIn();
@@ -138,59 +139,41 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* RIGHT HALF: Animated obsidian d20 hero */}
+      {/* RIGHT HALF: Live 3D obsidian d20 hero */}
       <div className="w-full md:w-1/2 relative bg-[#0a0812] flex items-center justify-center overflow-hidden min-h-[50vh] md:min-h-screen">
-        {/* Atmospheric backdrop */}
-        <div className="absolute inset-0 z-0 opacity-40">
-          <img
-            src={`${import.meta.env.BASE_URL}images/tavern-hero.png`}
-            alt=""
-            aria-hidden
-            className="w-full h-full object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#110e1b] via-transparent to-transparent md:block hidden" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#110e1b] via-transparent to-transparent md:hidden block" />
-        </div>
+        {/* Misty backdrop wash */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(40,20,60,0.55) 0%, rgba(10,8,18,0.95) 70%), linear-gradient(180deg, #0a0812 0%, #07050d 100%)",
+          }}
+        />
 
-        {/* Molten halo */}
+        {/* Molten halo behind the canvas */}
         <div className="absolute inset-0 z-[1] pointer-events-none flex items-center justify-center">
           <div
-            className="w-[60%] aspect-square rounded-full blur-3xl animate-landing-pulse"
-            style={{ background: "radial-gradient(circle, rgba(255,90,30,0.35) 0%, rgba(168,85,247,0.18) 40%, transparent 70%)" }}
+            className="w-[65%] aspect-square rounded-full blur-3xl animate-landing-pulse"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(255,90,30,0.35) 0%, rgba(168,85,247,0.18) 40%, transparent 70%)",
+            }}
           />
         </div>
 
-        <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes landing-spin-tilt {
-            0%   { transform: rotate3d(1, 1.2, 0.4, 0deg); }
-            100% { transform: rotate3d(1, 1.2, 0.4, 360deg); }
-          }
-          @keyframes landing-bob {
-            0%, 100% { transform: translateY(0px); }
-            50%      { transform: translateY(-14px); }
-          }
+        <style dangerouslySetInnerHTML={{
+          __html: `
           @keyframes landing-pulse {
             0%, 100% { opacity: 0.55; }
             50%      { opacity: 1; }
           }
-          .animate-landing-spin { animation: landing-spin-tilt 14s linear infinite; transform-style: preserve-3d; }
-          .animate-landing-bob  { animation: landing-bob 6s ease-in-out infinite; }
           .animate-landing-pulse { animation: landing-pulse 4s ease-in-out infinite; }
-        `}} />
+        `,
+        }} />
 
-        {/* Spinning obsidian d20 */}
-        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-          <div className="animate-landing-bob" style={{ perspective: "1200px" }}>
-            <img
-              src={`${import.meta.env.BASE_URL}images/obsidian-d20.png`}
-              alt="Obsidian d20"
-              className="w-[60%] max-w-[420px] mx-auto animate-landing-spin"
-              style={{
-                mixBlendMode: "screen",
-                filter: "drop-shadow(0 0 35px rgba(255,90,30,0.45)) drop-shadow(0 25px 45px rgba(255,80,20,0.25))",
-              }}
-            />
-          </div>
+        {/* Live 3D dice */}
+        <div className="absolute inset-0 z-10">
+          <Dice3D />
         </div>
 
         {/* Headline pinned to bottom of right pane */}

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Shield, ScrollText, Map, Users } from "lucide-react";
+import { Dice3D } from "../../Dice3D";
 
 const goToRealSignIn = () => {
   const top = window.top ?? window;
@@ -120,58 +121,37 @@ export function Tavern() {
 
       </div>
 
-      {/* RIGHT HALF: Animated Hero */}
+      {/* RIGHT HALF: Live 3D Hero */}
       <div className="w-full md:w-1/2 relative bg-[#0a0812] flex items-center justify-center overflow-hidden min-h-[50vh] md:min-h-screen">
-        
-        {/* Background — runic atmospheric backdrop */}
-        <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src="/__mockup/images/tavern-hero.png" 
-            alt="" 
-            aria-hidden
-            className="w-full h-full object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#110e1b] via-transparent to-transparent md:block hidden" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#110e1b] via-transparent to-transparent md:hidden block" />
-        </div>
+
+        {/* Misty backdrop wash */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(40,20,60,0.55) 0%, rgba(10,8,18,0.95) 70%), linear-gradient(180deg, #0a0812 0%, #07050d 100%)",
+          }}
+        />
 
         {/* Radial molten halo behind the die */}
         <div className="absolute inset-0 z-[1] pointer-events-none flex items-center justify-center">
           <div
-            className="w-[60%] aspect-square rounded-full blur-3xl animate-pulse-glow"
+            className="w-[65%] aspect-square rounded-full blur-3xl animate-pulse-glow"
             style={{ background: "radial-gradient(circle, rgba(255,90,30,0.35) 0%, rgba(168,85,247,0.18) 40%, transparent 70%)" }}
           />
         </div>
 
-        {/* CSS Animations */}
         <style dangerouslySetInnerHTML={{__html: `
-          @keyframes spin-tilt {
-            0%   { transform: rotate3d(1, 1.2, 0.4, 0deg); }
-            100% { transform: rotate3d(1, 1.2, 0.4, 360deg); }
-          }
-          @keyframes float-bob {
-            0%, 100% { transform: translateY(0px); }
-            50%      { transform: translateY(-14px); }
-          }
           @keyframes pulse-glow {
             0%, 100% { opacity: 0.55; }
             50%      { opacity: 1; }
           }
-          .animate-spin-tilt { animation: spin-tilt 14s linear infinite; transform-style: preserve-3d; }
-          .animate-float-bob { animation: float-bob 6s ease-in-out infinite; }
           .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
         `}} />
 
-        {/* Spinning Obsidian D20 — the centerpiece */}
-        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-          <div className="animate-float-bob" style={{ perspective: "1200px" }}>
-            <img
-              src="/__mockup/images/obsidian-d20.png"
-              alt="Obsidian d20"
-              className="w-[60%] max-w-[420px] mx-auto animate-spin-tilt drop-shadow-[0_25px_45px_rgba(255,80,20,0.35)]"
-              style={{ mixBlendMode: "screen", filter: "drop-shadow(0 0 35px rgba(255,90,30,0.45))" }}
-            />
-          </div>
+        {/* Live 3D D20 */}
+        <div className="absolute inset-0 z-10">
+          <Dice3D />
         </div>
 
         {/* Overlay Content — pinned to bottom so it doesn't fight the die */}
