@@ -25,6 +25,11 @@ export const GetMeResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   theme: zod.string(),
   timezone: zod.string(),
+  bio: zod.string(),
+  playstyleTags: zod.array(zod.string()),
+  experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+  availability: zod.string(),
+  isPublic: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -36,6 +41,13 @@ export const UpdateMeBody = zod.object({
   name: zod.string().optional(),
   theme: zod.string().optional(),
   timezone: zod.string().optional(),
+  bio: zod.string().optional(),
+  playstyleTags: zod.array(zod.string()).optional(),
+  experienceLevel: zod
+    .enum(["new", "casual", "experienced", "veteran"])
+    .optional(),
+  availability: zod.string().optional(),
+  isPublic: zod.boolean().optional(),
 });
 
 export const UpdateMeResponse = zod.object({
@@ -45,6 +57,11 @@ export const UpdateMeResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   theme: zod.string(),
   timezone: zod.string(),
+  bio: zod.string(),
+  playstyleTags: zod.array(zod.string()),
+  experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+  availability: zod.string(),
+  isPublic: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -957,6 +974,7 @@ export const GetCampaignResponse = zod.object({
   ep: zod.number(),
   gp: zod.number(),
   pp: zod.number(),
+  privacy: zod.enum(["public", "invite_only", "private"]),
   members: zod.array(
     zod.object({
       id: zod.number(),
@@ -1504,6 +1522,333 @@ export const GenerateSessionRecapBody = zod.object({
 
 export const GenerateSessionRecapResponse = zod.object({
   recap: zod.string(),
+});
+
+/**
+ * @summary Browse public campaign recruitment listings
+ */
+export const ListPublicCampaignsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  levelMin: zod.coerce.number().optional(),
+  levelMax: zod.coerce.number().optional(),
+  system: zod.coerce.string().optional(),
+});
+
+export const ListPublicCampaignsResponseItem = zod.object({
+  listing: zod.object({
+    id: zod.number(),
+    campaignId: zod.number(),
+    system: zod.string(),
+    levelMin: zod.number(),
+    levelMax: zod.number(),
+    schedule: zod.string(),
+    pitch: zod.string(),
+    openSlots: zod.number(),
+    isOpen: zod.boolean(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  campaignId: zod.number(),
+  campaignName: zod.string(),
+  campaignDescription: zod.string(),
+  memberCount: zod.number(),
+  dm: zod.object({
+    id: zod.string(),
+    name: zod.string().nullish(),
+    avatarUrl: zod.string().nullish(),
+    bio: zod.string(),
+    playstyleTags: zod.array(zod.string()),
+    experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+    availability: zod.string(),
+    timezone: zod.string(),
+  }),
+});
+export const ListPublicCampaignsResponse = zod.array(
+  ListPublicCampaignsResponseItem,
+);
+
+/**
+ * @summary Get a player's public profile
+ */
+export const GetPublicProfileParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const GetPublicProfileResponse = zod.object({
+  id: zod.string(),
+  name: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  bio: zod.string(),
+  playstyleTags: zod.array(zod.string()),
+  experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+  availability: zod.string(),
+  timezone: zod.string(),
+});
+
+/**
+ * @summary Update a campaign's privacy setting (DM only)
+ */
+export const UpdateCampaignPrivacyParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCampaignPrivacyBody = zod.object({
+  privacy: zod.enum(["public", "invite_only", "private"]),
+});
+
+export const UpdateCampaignPrivacyResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  inviteCode: zod.string(),
+  dmUserId: zod.string(),
+  cp: zod.number(),
+  sp: zod.number(),
+  ep: zod.number(),
+  gp: zod.number(),
+  pp: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get the recruitment listing for a campaign (members only)
+ */
+export const GetCampaignListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCampaignListingResponse = zod.union([
+  zod.object({
+    id: zod.number(),
+    campaignId: zod.number(),
+    system: zod.string(),
+    levelMin: zod.number(),
+    levelMax: zod.number(),
+    schedule: zod.string(),
+    pitch: zod.string(),
+    openSlots: zod.number(),
+    isOpen: zod.boolean(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  zod.null(),
+]);
+
+/**
+ * @summary Create or update the recruitment listing (DM only)
+ */
+export const UpsertCampaignListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const upsertCampaignListingBodyLevelMinMax = 20;
+
+export const upsertCampaignListingBodyLevelMaxMax = 20;
+
+export const upsertCampaignListingBodyOpenSlotsMin = 0;
+
+export const UpsertCampaignListingBody = zod.object({
+  system: zod.string().optional(),
+  levelMin: zod
+    .number()
+    .min(1)
+    .max(upsertCampaignListingBodyLevelMinMax)
+    .optional(),
+  levelMax: zod
+    .number()
+    .min(1)
+    .max(upsertCampaignListingBodyLevelMaxMax)
+    .optional(),
+  schedule: zod.string().optional(),
+  pitch: zod.string().optional(),
+  openSlots: zod.number().min(upsertCampaignListingBodyOpenSlotsMin).optional(),
+  isOpen: zod.boolean().optional(),
+});
+
+export const UpsertCampaignListingResponse = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  system: zod.string(),
+  levelMin: zod.number(),
+  levelMax: zod.number(),
+  schedule: zod.string(),
+  pitch: zod.string(),
+  openSlots: zod.number(),
+  isOpen: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Remove the recruitment listing (DM only)
+ */
+export const DeleteCampaignListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List join requests for a campaign (DM only)
+ */
+export const ListJoinRequestsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListJoinRequestsResponseItem = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  userId: zod.string(),
+  message: zod.string(),
+  status: zod.enum(["pending", "approved", "declined", "cancelled"]),
+  createdAt: zod.coerce.date(),
+  decidedAt: zod.coerce.date().nullish(),
+  user: zod
+    .object({
+      id: zod.string(),
+      name: zod.string().nullish(),
+      avatarUrl: zod.string().nullish(),
+      bio: zod.string(),
+      playstyleTags: zod.array(zod.string()),
+      experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+      availability: zod.string(),
+      timezone: zod.string(),
+    })
+    .optional(),
+});
+export const ListJoinRequestsResponse = zod.array(ListJoinRequestsResponseItem);
+
+/**
+ * @summary Request to join a public campaign
+ */
+export const CreateJoinRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const createJoinRequestBodyMessageMax = 1000;
+
+export const CreateJoinRequestBody = zod.object({
+  message: zod.string().max(createJoinRequestBodyMessageMax).optional(),
+});
+
+/**
+ * @summary List the current user's outgoing join requests
+ */
+export const ListMyJoinRequestsResponseItem = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  userId: zod.string(),
+  message: zod.string(),
+  status: zod.enum(["pending", "approved", "declined", "cancelled"]),
+  createdAt: zod.coerce.date(),
+  decidedAt: zod.coerce.date().nullish(),
+  user: zod
+    .object({
+      id: zod.string(),
+      name: zod.string().nullish(),
+      avatarUrl: zod.string().nullish(),
+      bio: zod.string(),
+      playstyleTags: zod.array(zod.string()),
+      experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+      availability: zod.string(),
+      timezone: zod.string(),
+    })
+    .optional(),
+});
+export const ListMyJoinRequestsResponse = zod.array(
+  ListMyJoinRequestsResponseItem,
+);
+
+/**
+ * @summary Approve a pending join request (DM only)
+ */
+export const ApproveJoinRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ApproveJoinRequestResponse = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  userId: zod.string(),
+  message: zod.string(),
+  status: zod.enum(["pending", "approved", "declined", "cancelled"]),
+  createdAt: zod.coerce.date(),
+  decidedAt: zod.coerce.date().nullish(),
+  user: zod
+    .object({
+      id: zod.string(),
+      name: zod.string().nullish(),
+      avatarUrl: zod.string().nullish(),
+      bio: zod.string(),
+      playstyleTags: zod.array(zod.string()),
+      experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+      availability: zod.string(),
+      timezone: zod.string(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Decline a pending join request (DM only)
+ */
+export const DeclineJoinRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeclineJoinRequestResponse = zod.object({
+  id: zod.number(),
+  campaignId: zod.number(),
+  userId: zod.string(),
+  message: zod.string(),
+  status: zod.enum(["pending", "approved", "declined", "cancelled"]),
+  createdAt: zod.coerce.date(),
+  decidedAt: zod.coerce.date().nullish(),
+  user: zod
+    .object({
+      id: zod.string(),
+      name: zod.string().nullish(),
+      avatarUrl: zod.string().nullish(),
+      bio: zod.string(),
+      playstyleTags: zod.array(zod.string()),
+      experienceLevel: zod.enum(["new", "casual", "experienced", "veteran"]),
+      availability: zod.string(),
+      timezone: zod.string(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary List users I've blocked
+ */
+export const ListMyBlocksResponseItem = zod.object({
+  id: zod.number(),
+  blockedUserId: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListMyBlocksResponse = zod.array(ListMyBlocksResponseItem);
+
+/**
+ * @summary Block a user
+ */
+export const BlockUserParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+/**
+ * @summary Unblock a user
+ */
+export const UnblockUserParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+/**
+ * @summary Report a user or campaign
+ */
+
+export const CreateReportBody = zod.object({
+  targetType: zod.enum(["user", "campaign"]),
+  targetId: zod.string(),
+  reason: zod.string().min(1),
+  details: zod.string().optional(),
 });
 
 /**

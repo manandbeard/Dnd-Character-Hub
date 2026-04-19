@@ -1,7 +1,9 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
+
+export const campaignPrivacyEnum = pgEnum("campaign_privacy", ["public", "invite_only", "private"]);
 
 export const campaignsTable = pgTable("campaigns", {
   id: serial("id").primaryKey(),
@@ -9,6 +11,9 @@ export const campaignsTable = pgTable("campaigns", {
   description: text("description").notNull().default(""),
   inviteCode: text("invite_code").notNull().unique(),
   dmUserId: text("dm_user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+
+  // Phase 4: privacy
+  privacy: campaignPrivacyEnum("privacy").notNull().default("invite_only"),
 
   // Party currency pool
   cp: integer("cp").notNull().default(0),

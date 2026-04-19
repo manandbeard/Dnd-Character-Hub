@@ -14,6 +14,8 @@ import CharacterLevelUp from "@/pages/character-level-up";
 import SpellsPage from "@/pages/spells";
 import ItemsPage from "@/pages/items";
 import AccountPage from "@/pages/account";
+import DiscoverPage from "@/pages/discover";
+import ProfilePage from "@/pages/profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +75,12 @@ function Router() {
       </Route>
       <Route path="/account">
         <AuthGuard><AccountPage /></AuthGuard>
+      </Route>
+      <Route path="/discover">
+        <DiscoverPage />
+      </Route>
+      <Route path="/profile/:userId">
+        {(params) => <ProfilePage userId={String(params.userId)} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

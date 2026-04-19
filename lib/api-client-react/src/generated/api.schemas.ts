@@ -13,6 +13,16 @@ export interface Error {
   error: string;
 }
 
+export type UserExperienceLevel =
+  (typeof UserExperienceLevel)[keyof typeof UserExperienceLevel];
+
+export const UserExperienceLevel = {
+  new: "new",
+  casual: "casual",
+  experienced: "experienced",
+  veteran: "veteran",
+} as const;
+
 export interface User {
   id: string;
   email: string;
@@ -22,14 +32,161 @@ export interface User {
   avatarUrl?: string | null;
   theme: string;
   timezone: string;
+  bio: string;
+  playstyleTags: string[];
+  experienceLevel: UserExperienceLevel;
+  availability: string;
+  isPublic: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export type UpdateUserBodyExperienceLevel =
+  (typeof UpdateUserBodyExperienceLevel)[keyof typeof UpdateUserBodyExperienceLevel];
+
+export const UpdateUserBodyExperienceLevel = {
+  new: "new",
+  casual: "casual",
+  experienced: "experienced",
+  veteran: "veteran",
+} as const;
 
 export interface UpdateUserBody {
   name?: string;
   theme?: string;
   timezone?: string;
+  bio?: string;
+  playstyleTags?: string[];
+  experienceLevel?: UpdateUserBodyExperienceLevel;
+  availability?: string;
+  isPublic?: boolean;
+}
+
+export type PublicProfileExperienceLevel =
+  (typeof PublicProfileExperienceLevel)[keyof typeof PublicProfileExperienceLevel];
+
+export const PublicProfileExperienceLevel = {
+  new: "new",
+  casual: "casual",
+  experienced: "experienced",
+  veteran: "veteran",
+} as const;
+
+export interface PublicProfile {
+  id: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  bio: string;
+  playstyleTags: string[];
+  experienceLevel: PublicProfileExperienceLevel;
+  availability: string;
+  timezone: string;
+}
+
+export interface CampaignListing {
+  id: number;
+  campaignId: number;
+  system: string;
+  levelMin: number;
+  levelMax: number;
+  schedule: string;
+  pitch: string;
+  openSlots: number;
+  isOpen: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicCampaignListing {
+  listing: CampaignListing;
+  campaignId: number;
+  campaignName: string;
+  campaignDescription: string;
+  memberCount: number;
+  dm: PublicProfile;
+}
+
+export interface UpsertCampaignListingBody {
+  system?: string;
+  /**
+   * @minimum 1
+   * @maximum 20
+   */
+  levelMin?: number;
+  /**
+   * @minimum 1
+   * @maximum 20
+   */
+  levelMax?: number;
+  schedule?: string;
+  pitch?: string;
+  /** @minimum 0 */
+  openSlots?: number;
+  isOpen?: boolean;
+}
+
+export type UpdateCampaignPrivacyBodyPrivacy =
+  (typeof UpdateCampaignPrivacyBodyPrivacy)[keyof typeof UpdateCampaignPrivacyBodyPrivacy];
+
+export const UpdateCampaignPrivacyBodyPrivacy = {
+  public: "public",
+  invite_only: "invite_only",
+  private: "private",
+} as const;
+
+export interface UpdateCampaignPrivacyBody {
+  privacy: UpdateCampaignPrivacyBodyPrivacy;
+}
+
+export type JoinRequestStatus =
+  (typeof JoinRequestStatus)[keyof typeof JoinRequestStatus];
+
+export const JoinRequestStatus = {
+  pending: "pending",
+  approved: "approved",
+  declined: "declined",
+  cancelled: "cancelled",
+} as const;
+
+export interface JoinRequest {
+  id: number;
+  campaignId: number;
+  userId: string;
+  message: string;
+  status: JoinRequestStatus;
+  createdAt: string;
+  /** @nullable */
+  decidedAt?: string | null;
+  user?: PublicProfile;
+}
+
+export interface CreateJoinRequestBody {
+  /** @maxLength 1000 */
+  message?: string;
+}
+
+export interface UserBlock {
+  id: number;
+  blockedUserId: string;
+  createdAt: string;
+}
+
+export type CreateReportBodyTargetType =
+  (typeof CreateReportBodyTargetType)[keyof typeof CreateReportBodyTargetType];
+
+export const CreateReportBodyTargetType = {
+  user: "user",
+  campaign: "campaign",
+} as const;
+
+export interface CreateReportBody {
+  targetType: CreateReportBodyTargetType;
+  targetId: string;
+  /** @minLength 1 */
+  reason: string;
+  details?: string;
 }
 
 export type CharacterSpellSlots = {
@@ -418,6 +575,15 @@ export interface CampaignMember {
   joinedAt: string;
 }
 
+export type CampaignDetailPrivacy =
+  (typeof CampaignDetailPrivacy)[keyof typeof CampaignDetailPrivacy];
+
+export const CampaignDetailPrivacy = {
+  public: "public",
+  invite_only: "invite_only",
+  private: "private",
+} as const;
+
 export interface CampaignDetail {
   id: number;
   name: string;
@@ -429,6 +595,7 @@ export interface CampaignDetail {
   ep: number;
   gp: number;
   pp: number;
+  privacy: CampaignDetailPrivacy;
   members: CampaignMember[];
   createdAt: string;
   updatedAt: string;
@@ -637,4 +804,11 @@ export type ListLedgerEntriesParams = {
   characterId?: number;
   limit?: number;
   offset?: number;
+};
+
+export type ListPublicCampaignsParams = {
+  search?: string;
+  levelMin?: number;
+  levelMax?: number;
+  system?: string;
 };

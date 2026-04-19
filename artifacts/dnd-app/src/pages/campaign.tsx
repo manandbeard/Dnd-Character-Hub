@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,15 @@ import {
   useListCampaigns,
   useGenerateSessionRecap,
   useGenerateLedgerAdvice,
+  useUpdateCampaignPrivacy,
+  useGetCampaignListing,
+  useUpsertCampaignListing,
+  useDeleteCampaignListing,
+  useListJoinRequests,
+  useApproveJoinRequest,
+  useDeclineJoinRequest,
+  getGetCampaignListingQueryKey,
+  getListJoinRequestsQueryKey,
 } from "@workspace/api-client-react";
 import AIPanel from "@/components/AIPanel";
 import { useQueryClient } from "@tanstack/react-query";
@@ -49,7 +58,7 @@ import { useUser } from "@clerk/react";
 import {
   ArrowLeft, Copy, RefreshCw, Trash2, Plus, ArrowRightLeft,
   Shield, Heart, Eye, Coins, Clock, Package, Users, Swords,
-  ChevronDown, ChevronUp, UserMinus, Scroll, Wand2,
+  ChevronDown, ChevronUp, UserMinus, Scroll, Wand2, Megaphone, Check, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -430,6 +439,11 @@ export default function CampaignPage({ id }: Props) {
             <TabsTrigger value="ledger" className="gap-2">
               <Clock className="w-4 h-4" /> Ledger
             </TabsTrigger>
+            {isDm && (
+              <TabsTrigger value="recruit" className="gap-2" data-testid="tab-recruit">
+                <Megaphone className="w-4 h-4" /> Recruit
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* ── Party Tab ── */}
@@ -772,6 +786,12 @@ export default function CampaignPage({ id }: Props) {
               )}
             </div>
           </TabsContent>
+
+          {isDm && (
+            <TabsContent value="recruit">
+              <RecruitTab campaignId={id} privacy={campaign.privacy ?? "invite_only"} isDm={isDm} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
@@ -970,5 +990,228 @@ export default function CampaignPage({ id }: Props) {
         </DialogContent>
       </Dialog>
     </AppLayout>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recruit tab (DM only)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RecruitTab({ campaignId, privacy, isDm }: { campaignId: number; privacy: string; isDm: boolean }) {
+  if (!isDm) return null;
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: listing } = useGetCampaignListing(campaignId);
+  const { data: requests } = useListJoinRequests(campaignId);
+  const updatePrivacy = useUpdateCampaignPrivacy();
+  const upsertListing = useUpsertCampaignListing();
+  const deleteListing = useDeleteCampaignListing();
+  const approveReq = useApproveJoinRequest();
+  const declineReq = useDeclineJoinRequest();
+
+  const [system, setSystem] = useState("D&D 5e");
+  const [levelMin, setLevelMin] = useState("1");
+  const [levelMax, setLevelMax] = useState("20");
+  const [schedule, setSchedule] = useState("");
+  const [pitch, setPitch] = useState("");
+  const [openSlots, setOpenSlots] = useState("1");
+  const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    if (listing) {
+      setSystem(listing.system);
+      setLevelMin(String(listing.levelMin));
+      setLevelMax(String(listing.levelMax));
+      setSchedule(listing.schedule);
+      setPitch(listing.pitch);
+      setOpenSlots(String(listing.openSlots));
+      setIsOpen(listing.isOpen);
+    }
+  }, [listing]);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getGetCampaignListingQueryKey(campaignId) });
+    queryClient.invalidateQueries({ queryKey: getListJoinRequestsQueryKey(campaignId) });
+    queryClient.invalidateQueries({ queryKey: getGetCampaignQueryKey(campaignId) });
+  };
+
+  const onSavePrivacy = (p: "public" | "invite_only" | "private") => {
+    updatePrivacy.mutate(
+      { id: campaignId, data: { privacy: p } },
+      { onSuccess: () => { toast({ title: `Privacy set to ${p.replace("_", " ")}` }); invalidate(); },
+        onError: () => toast({ title: "Failed to update privacy", variant: "destructive" }) }
+    );
+  };
+
+  const onSaveListing = () => {
+    upsertListing.mutate(
+      {
+        id: campaignId,
+        data: {
+          system,
+          levelMin: Number(levelMin) || 1,
+          levelMax: Number(levelMax) || 20,
+          schedule,
+          pitch,
+          openSlots: Number(openSlots) || 0,
+          isOpen,
+        },
+      },
+      { onSuccess: () => { toast({ title: "Listing saved" }); invalidate(); },
+        onError: () => toast({ title: "Failed to save listing", variant: "destructive" }) }
+    );
+  };
+
+  const onDeleteListing = () => {
+    if (!confirm("Remove the public listing? Pending requests are kept.")) return;
+    deleteListing.mutate(
+      { id: campaignId },
+      { onSuccess: () => { toast({ title: "Listing removed" }); invalidate(); } }
+    );
+  };
+
+  const onApprove = (id: number) =>
+    approveReq.mutate({ id }, { onSuccess: () => { toast({ title: "Player approved!" }); invalidate(); } });
+  const onDecline = (id: number) =>
+    declineReq.mutate({ id }, { onSuccess: () => { toast({ title: "Request declined" }); invalidate(); } });
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-6">
+      {/* Privacy + Listing */}
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Shield className="w-4 h-4" /> Campaign Privacy</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(["invite_only", "public", "private"] as const).map((p) => (
+              <label key={p} className={cn(
+                "flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors",
+                privacy === p ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+              )}>
+                <input type="radio" name="privacy" value={p} checked={privacy === p}
+                  onChange={() => onSavePrivacy(p)} className="mt-1" data-testid={`radio-privacy-${p}`} />
+                <div>
+                  <div className="font-medium text-sm">
+                    {p === "invite_only" && "Invite Only"}
+                    {p === "public" && "Public — open to discovery"}
+                    {p === "private" && "Private — DM only"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {p === "invite_only" && "Players need the invite code."}
+                    {p === "public" && "Listed on Discover; players can request to join."}
+                    {p === "private" && "Hidden everywhere. Manage your own roster."}
+                  </div>
+                </div>
+              </label>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Megaphone className="w-4 h-4" /> Recruitment Listing</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {privacy !== "public" && (
+              <div className="text-xs text-muted-foreground p-2 rounded-md bg-muted">
+                Set privacy to <strong>Public</strong> to actually publish this listing on Discover.
+              </div>
+            )}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-3">
+                <Label className="text-xs">System</Label>
+                <Input value={system} onChange={(e) => setSystem(e.target.value)} data-testid="input-listing-system" />
+              </div>
+              <div>
+                <Label className="text-xs">Level Min</Label>
+                <Input type="number" min="1" max="20" value={levelMin} onChange={(e) => setLevelMin(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Level Max</Label>
+                <Input type="number" min="1" max="20" value={levelMax} onChange={(e) => setLevelMax(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Open Slots</Label>
+                <Input type="number" min="0" value={openSlots} onChange={(e) => setOpenSlots(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Schedule</Label>
+              <Input value={schedule} onChange={(e) => setSchedule(e.target.value)}
+                placeholder="Sundays 7pm ET, biweekly" data-testid="input-listing-schedule" />
+            </div>
+            <div>
+              <Label className="text-xs">Pitch</Label>
+              <Textarea rows={4} value={pitch} onChange={(e) => setPitch(e.target.value)}
+                placeholder="A noir-fantasy heist game in the city of Brass…" data-testid="input-listing-pitch" />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={isOpen} onChange={(e) => setIsOpen(e.target.checked)} />
+              Listing is open to new requests
+            </label>
+            <div className="flex gap-2 pt-1">
+              <Button onClick={onSaveListing} disabled={upsertListing.isPending} data-testid="button-save-listing">
+                {upsertListing.isPending ? "Saving…" : listing ? "Update Listing" : "Create Listing"}
+              </Button>
+              {listing && (
+                <Button variant="outline" onClick={onDeleteListing} disabled={deleteListing.isPending}>
+                  Remove
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Join requests inbox */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Users className="w-4 h-4" /> Join Requests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!requests || requests.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No requests yet. Once your listing is live, players can apply here.</p>
+          ) : (
+            <ul className="space-y-3">
+              {requests.map((r) => (
+                <li key={r.id} className="rounded-md border border-border p-3 space-y-2"
+                    data-testid={`join-request-${r.id}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <Link href={`/profile/${r.userId}`} className="font-medium hover:underline">
+                        {r.user?.name ?? r.userId}
+                      </Link>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(r.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                    <Badge variant={
+                      r.status === "pending" ? "outline" :
+                      r.status === "approved" ? "default" : "secondary"
+                    }>
+                      {r.status}
+                    </Badge>
+                  </div>
+                  {r.message && <p className="text-sm text-muted-foreground italic">"{r.message}"</p>}
+                  {r.status === "pending" && (
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => onApprove(r.id)} disabled={approveReq.isPending}
+                        data-testid={`button-approve-${r.id}`}>
+                        <Check className="w-3.5 h-3.5 mr-1" /> Approve
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => onDecline(r.id)} disabled={declineReq.isPending}
+                        data-testid={`button-decline-${r.id}`}>
+                        <X className="w-3.5 h-3.5 mr-1" /> Decline
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

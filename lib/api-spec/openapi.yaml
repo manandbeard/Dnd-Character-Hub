@@ -34,6 +34,10 @@ tags:
     description: Campaign transaction history
   - name: ai
     description: AI-assisted generation (backstory, build advice, recap, ledger advice)
+  - name: discovery
+    description: Public campaign discovery and recruitment listings
+  - name: social
+    description: Player profiles, join requests, blocks, and reports
 
 paths:
   /healthz:
@@ -1592,6 +1596,329 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  # ── Discovery (public, no auth) ───────────────────────────────────────────
+  /discovery/campaigns:
+    get:
+      operationId: listPublicCampaigns
+      tags: [discovery]
+      summary: Browse public campaign recruitment listings
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: levelMin
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: levelMax
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: system
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Public listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PublicCampaignListing" }
+
+  /discovery/profiles/{userId}:
+    get:
+      operationId: getPublicProfile
+      tags: [social]
+      summary: Get a player's public profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Public profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicProfile" }
+        "404":
+          description: Profile not public or not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ── Campaign privacy + listing (DM only) ──────────────────────────────────
+  /campaigns/{id}/privacy:
+    patch:
+      operationId: updateCampaignPrivacy
+      tags: [campaigns]
+      summary: Update a campaign's privacy setting (DM only)
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCampaignPrivacyBody" }
+      responses:
+        "200":
+          description: Updated campaign
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Campaign" }
+        "403":
+          description: Not the DM
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /campaigns/{id}/listing:
+    get:
+      operationId: getCampaignListing
+      tags: [discovery]
+      summary: Get the recruitment listing for a campaign (members only)
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Listing or null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/CampaignListing" }
+                  - { type: "null" }
+    put:
+      operationId: upsertCampaignListing
+      tags: [discovery]
+      summary: Create or update the recruitment listing (DM only)
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpsertCampaignListingBody" }
+      responses:
+        "200":
+          description: Saved listing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CampaignListing" }
+        "403":
+          description: Not the DM
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      operationId: deleteCampaignListing
+      tags: [discovery]
+      summary: Remove the recruitment listing (DM only)
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Join requests ────────────────────────────────────────────────────────
+  /campaigns/{id}/join-requests:
+    get:
+      operationId: listJoinRequests
+      tags: [social]
+      summary: List join requests for a campaign (DM only)
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Join requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/JoinRequest" }
+        "403":
+          description: Not the DM
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    post:
+      operationId: createJoinRequest
+      tags: [social]
+      summary: Request to join a public campaign
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateJoinRequestBody" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JoinRequest" }
+        "400":
+          description: Already a member or already requested
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Campaign is not public
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /join-requests/me:
+    get:
+      operationId: listMyJoinRequests
+      tags: [social]
+      summary: List the current user's outgoing join requests
+      security: [{ clerkAuth: [] }]
+      responses:
+        "200":
+          description: Join requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/JoinRequest" }
+
+  /join-requests/{id}/approve:
+    post:
+      operationId: approveJoinRequest
+      tags: [social]
+      summary: Approve a pending join request (DM only)
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JoinRequest" }
+        "403":
+          description: Not the DM
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /join-requests/{id}/decline:
+    post:
+      operationId: declineJoinRequest
+      tags: [social]
+      summary: Decline a pending join request (DM only)
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Declined
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JoinRequest" }
+        "403":
+          description: Not the DM
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ── Blocks & Reports ─────────────────────────────────────────────────────
+  /users/me/blocks:
+    get:
+      operationId: listMyBlocks
+      tags: [social]
+      summary: List users I've blocked
+      security: [{ clerkAuth: [] }]
+      responses:
+        "200":
+          description: Blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/UserBlock" }
+
+  /users/{userId}/block:
+    post:
+      operationId: blockUser
+      tags: [social]
+      summary: Block a user
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "201":
+          description: Blocked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserBlock" }
+    delete:
+      operationId: unblockUser
+      tags: [social]
+      summary: Unblock a user
+      security: [{ clerkAuth: [] }]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Unblocked
+
+  /reports:
+    post:
+      operationId: createReport
+      tags: [social]
+      summary: Report a user or campaign
+      security: [{ clerkAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateReportBody" }
+      responses:
+        "201":
+          description: Report created
+
   /ai/campaigns/{id}/ledger-advice:
     post:
       operationId: generateLedgerAdvice
@@ -1670,6 +1997,18 @@ components:
           type: string
         timezone:
           type: string
+        bio:
+          type: string
+        playstyleTags:
+          type: array
+          items: { type: string }
+        experienceLevel:
+          type: string
+          enum: [new, casual, experienced, veteran]
+        availability:
+          type: string
+        isPublic:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1681,6 +2020,11 @@ components:
         - email
         - theme
         - timezone
+        - bio
+        - playstyleTags
+        - experienceLevel
+        - availability
+        - isPublic
         - createdAt
         - updatedAt
 
@@ -1693,6 +2037,120 @@ components:
           type: string
         timezone:
           type: string
+        bio:
+          type: string
+        playstyleTags:
+          type: array
+          items: { type: string }
+        experienceLevel:
+          type: string
+          enum: [new, casual, experienced, veteran]
+        availability:
+          type: string
+        isPublic:
+          type: boolean
+
+    PublicProfile:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        bio: { type: string }
+        playstyleTags:
+          type: array
+          items: { type: string }
+        experienceLevel:
+          type: string
+          enum: [new, casual, experienced, veteran]
+        availability: { type: string }
+        timezone: { type: string }
+      required: [id, bio, playstyleTags, experienceLevel, availability, timezone]
+
+    CampaignListing:
+      type: object
+      properties:
+        id: { type: integer }
+        campaignId: { type: integer }
+        system: { type: string }
+        levelMin: { type: integer }
+        levelMax: { type: integer }
+        schedule: { type: string }
+        pitch: { type: string }
+        openSlots: { type: integer }
+        isOpen: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, campaignId, system, levelMin, levelMax, schedule, pitch, openSlots, isOpen, createdAt, updatedAt]
+
+    PublicCampaignListing:
+      type: object
+      properties:
+        listing: { $ref: "#/components/schemas/CampaignListing" }
+        campaignId: { type: integer }
+        campaignName: { type: string }
+        campaignDescription: { type: string }
+        memberCount: { type: integer }
+        dm: { $ref: "#/components/schemas/PublicProfile" }
+      required: [listing, campaignId, campaignName, campaignDescription, memberCount, dm]
+
+    UpsertCampaignListingBody:
+      type: object
+      properties:
+        system: { type: string }
+        levelMin: { type: integer, minimum: 1, maximum: 20 }
+        levelMax: { type: integer, minimum: 1, maximum: 20 }
+        schedule: { type: string }
+        pitch: { type: string }
+        openSlots: { type: integer, minimum: 0 }
+        isOpen: { type: boolean }
+
+    UpdateCampaignPrivacyBody:
+      type: object
+      properties:
+        privacy:
+          type: string
+          enum: [public, invite_only, private]
+      required: [privacy]
+
+    JoinRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        campaignId: { type: integer }
+        userId: { type: string }
+        message: { type: string }
+        status:
+          type: string
+          enum: [pending, approved, declined, cancelled]
+        createdAt: { type: string, format: date-time }
+        decidedAt: { type: ["string", "null"], format: date-time }
+        user: { $ref: "#/components/schemas/PublicProfile" }
+      required: [id, campaignId, userId, message, status, createdAt]
+
+    CreateJoinRequestBody:
+      type: object
+      properties:
+        message: { type: string, maxLength: 1000 }
+
+    UserBlock:
+      type: object
+      properties:
+        id: { type: integer }
+        blockedUserId: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, blockedUserId, createdAt]
+
+    CreateReportBody:
+      type: object
+      properties:
+        targetType:
+          type: string
+          enum: [user, campaign]
+        targetId: { type: string }
+        reason: { type: string, minLength: 1 }
+        details: { type: string }
+      required: [targetType, targetId, reason]
 
     # ── Characters ─────────────────────────────────────────────────────────
     Character:
@@ -2581,6 +3039,9 @@ components:
           type: integer
         pp:
           type: integer
+        privacy:
+          type: string
+          enum: [public, invite_only, private]
         members:
           type: array
           items:
@@ -2597,6 +3058,7 @@ components:
         - description
         - inviteCode
         - dmUserId
+        - privacy
         - cp
         - sp
         - ep

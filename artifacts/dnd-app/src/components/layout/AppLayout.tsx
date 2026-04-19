@@ -1,11 +1,12 @@
 import { Link, useLocation } from "wouter";
 import { UserButton } from "@clerk/react";
-import { Users, BookOpen, Package, Settings, Shield, Swords } from "lucide-react";
+import { Users, BookOpen, Package, Settings, Shield, Swords, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/characters", label: "Characters", icon: Users },
   { href: "/campaigns", label: "Campaigns", icon: Swords },
+  { href: "/discover", label: "Discover", icon: Compass },
   { href: "/spells", label: "Spells", icon: BookOpen },
   { href: "/items", label: "Items", icon: Package },
   { href: "/account", label: "Account", icon: Settings },
