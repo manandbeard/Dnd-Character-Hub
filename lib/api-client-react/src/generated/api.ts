@@ -32,6 +32,14 @@ import type {
   CurrencyDeltaBody,
   DerivedStats,
   Error,
+  GenerateBackstoryBody,
+  GenerateBackstoryResponse,
+  GenerateBuildAdviceBody,
+  GenerateBuildAdviceResponse,
+  GenerateLedgerAdviceBody,
+  GenerateLedgerAdviceResponse,
+  GenerateSessionRecapBody,
+  GenerateSessionRecapResponse,
   HealthStatus,
   InventoryItem,
   ItemRef,
@@ -3819,3 +3827,362 @@ export function useListLedgerEntries<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Generate an AI backstory for a character
+ */
+export const getGenerateBackstoryUrl = (id: number) => {
+  return `/api/ai/characters/${id}/backstory`;
+};
+
+export const generateBackstory = async (
+  id: number,
+  generateBackstoryBody?: GenerateBackstoryBody,
+  options?: RequestInit,
+): Promise<GenerateBackstoryResponse> => {
+  return customFetch<GenerateBackstoryResponse>(getGenerateBackstoryUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateBackstoryBody),
+  });
+};
+
+export const getGenerateBackstoryMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBackstory>>,
+    TError,
+    { id: number; data: BodyType<GenerateBackstoryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateBackstory>>,
+  TError,
+  { id: number; data: BodyType<GenerateBackstoryBody> },
+  TContext
+> => {
+  const mutationKey = ["generateBackstory"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateBackstory>>,
+    { id: number; data: BodyType<GenerateBackstoryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateBackstory(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateBackstoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateBackstory>>
+>;
+export type GenerateBackstoryMutationBody = BodyType<GenerateBackstoryBody>;
+export type GenerateBackstoryMutationError = ErrorType<Error>;
+
+/**
+ * @summary Generate an AI backstory for a character
+ */
+export const useGenerateBackstory = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBackstory>>,
+    TError,
+    { id: number; data: BodyType<GenerateBackstoryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateBackstory>>,
+  TError,
+  { id: number; data: BodyType<GenerateBackstoryBody> },
+  TContext
+> => {
+  return useMutation(getGenerateBackstoryMutationOptions(options));
+};
+
+/**
+ * @summary Generate build advice for a character
+ */
+export const getGenerateBuildAdviceUrl = (id: number) => {
+  return `/api/ai/characters/${id}/advice`;
+};
+
+export const generateBuildAdvice = async (
+  id: number,
+  generateBuildAdviceBody?: GenerateBuildAdviceBody,
+  options?: RequestInit,
+): Promise<GenerateBuildAdviceResponse> => {
+  return customFetch<GenerateBuildAdviceResponse>(
+    getGenerateBuildAdviceUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(generateBuildAdviceBody),
+    },
+  );
+};
+
+export const getGenerateBuildAdviceMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBuildAdvice>>,
+    TError,
+    { id: number; data: BodyType<GenerateBuildAdviceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateBuildAdvice>>,
+  TError,
+  { id: number; data: BodyType<GenerateBuildAdviceBody> },
+  TContext
+> => {
+  const mutationKey = ["generateBuildAdvice"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateBuildAdvice>>,
+    { id: number; data: BodyType<GenerateBuildAdviceBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateBuildAdvice(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateBuildAdviceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateBuildAdvice>>
+>;
+export type GenerateBuildAdviceMutationBody = BodyType<GenerateBuildAdviceBody>;
+export type GenerateBuildAdviceMutationError = ErrorType<Error>;
+
+/**
+ * @summary Generate build advice for a character
+ */
+export const useGenerateBuildAdvice = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBuildAdvice>>,
+    TError,
+    { id: number; data: BodyType<GenerateBuildAdviceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateBuildAdvice>>,
+  TError,
+  { id: number; data: BodyType<GenerateBuildAdviceBody> },
+  TContext
+> => {
+  return useMutation(getGenerateBuildAdviceMutationOptions(options));
+};
+
+/**
+ * @summary Generate a session recap (DM only)
+ */
+export const getGenerateSessionRecapUrl = (id: number) => {
+  return `/api/ai/campaigns/${id}/recap`;
+};
+
+export const generateSessionRecap = async (
+  id: number,
+  generateSessionRecapBody?: GenerateSessionRecapBody,
+  options?: RequestInit,
+): Promise<GenerateSessionRecapResponse> => {
+  return customFetch<GenerateSessionRecapResponse>(
+    getGenerateSessionRecapUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(generateSessionRecapBody),
+    },
+  );
+};
+
+export const getGenerateSessionRecapMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateSessionRecap>>,
+    TError,
+    { id: number; data: BodyType<GenerateSessionRecapBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateSessionRecap>>,
+  TError,
+  { id: number; data: BodyType<GenerateSessionRecapBody> },
+  TContext
+> => {
+  const mutationKey = ["generateSessionRecap"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateSessionRecap>>,
+    { id: number; data: BodyType<GenerateSessionRecapBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateSessionRecap(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateSessionRecapMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateSessionRecap>>
+>;
+export type GenerateSessionRecapMutationBody =
+  BodyType<GenerateSessionRecapBody>;
+export type GenerateSessionRecapMutationError = ErrorType<Error>;
+
+/**
+ * @summary Generate a session recap (DM only)
+ */
+export const useGenerateSessionRecap = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateSessionRecap>>,
+    TError,
+    { id: number; data: BodyType<GenerateSessionRecapBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateSessionRecap>>,
+  TError,
+  { id: number; data: BodyType<GenerateSessionRecapBody> },
+  TContext
+> => {
+  return useMutation(getGenerateSessionRecapMutationOptions(options));
+};
+
+/**
+ * @summary Get AI advice on the party's ledger and shared resources
+ */
+export const getGenerateLedgerAdviceUrl = (id: number) => {
+  return `/api/ai/campaigns/${id}/ledger-advice`;
+};
+
+export const generateLedgerAdvice = async (
+  id: number,
+  generateLedgerAdviceBody?: GenerateLedgerAdviceBody,
+  options?: RequestInit,
+): Promise<GenerateLedgerAdviceResponse> => {
+  return customFetch<GenerateLedgerAdviceResponse>(
+    getGenerateLedgerAdviceUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(generateLedgerAdviceBody),
+    },
+  );
+};
+
+export const getGenerateLedgerAdviceMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateLedgerAdvice>>,
+    TError,
+    { id: number; data: BodyType<GenerateLedgerAdviceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateLedgerAdvice>>,
+  TError,
+  { id: number; data: BodyType<GenerateLedgerAdviceBody> },
+  TContext
+> => {
+  const mutationKey = ["generateLedgerAdvice"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateLedgerAdvice>>,
+    { id: number; data: BodyType<GenerateLedgerAdviceBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateLedgerAdvice(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateLedgerAdviceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateLedgerAdvice>>
+>;
+export type GenerateLedgerAdviceMutationBody =
+  BodyType<GenerateLedgerAdviceBody>;
+export type GenerateLedgerAdviceMutationError = ErrorType<Error>;
+
+/**
+ * @summary Get AI advice on the party's ledger and shared resources
+ */
+export const useGenerateLedgerAdvice = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateLedgerAdvice>>,
+    TError,
+    { id: number; data: BodyType<GenerateLedgerAdviceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateLedgerAdvice>>,
+  TError,
+  { id: number; data: BodyType<GenerateLedgerAdviceBody> },
+  TContext
+> => {
+  return useMutation(getGenerateLedgerAdviceMutationOptions(options));
+};

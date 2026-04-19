@@ -9,6 +9,7 @@ import backgroundsRouter from "./backgrounds";
 import spellsRouter from "./spells";
 import itemsRouter from "./items";
 import campaignsRouter from "./campaigns";
+import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(backgroundsRouter);
 router.use(spellsRouter);
 router.use(itemsRouter);
 router.use(campaignsRouter);
+router.use(aiRouter);
 
 export default router;

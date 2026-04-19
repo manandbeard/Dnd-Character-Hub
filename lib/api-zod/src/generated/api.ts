@@ -1386,3 +1386,140 @@ export const ListLedgerEntriesResponseItem = zod.object({
 export const ListLedgerEntriesResponse = zod.array(
   ListLedgerEntriesResponseItem,
 );
+
+/**
+ * @summary Generate an AI backstory for a character
+ */
+export const GenerateBackstoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GenerateBackstoryBody = zod.object({
+  tone: zod
+    .string()
+    .optional()
+    .describe('e.g. \"tragic\", \"hopeful\", \"comedic\"'),
+  themes: zod
+    .string()
+    .optional()
+    .describe("Free-form themes or hooks the player wants explored"),
+});
+
+export const GenerateBackstoryResponse = zod.object({
+  backstory: zod.string(),
+  character: zod.object({
+    id: zod.number(),
+    userId: zod.string(),
+    name: zod.string(),
+    race: zod.string(),
+    subrace: zod.string().nullish(),
+    class: zod.string(),
+    subclass: zod.string().nullish(),
+    background: zod.string(),
+    alignment: zod.string(),
+    level: zod.number(),
+    experience: zod.number(),
+    inspiration: zod.boolean(),
+    strength: zod.number(),
+    dexterity: zod.number(),
+    constitution: zod.number(),
+    intelligence: zod.number(),
+    wisdom: zod.number(),
+    charisma: zod.number(),
+    maxHp: zod.number(),
+    currentHp: zod.number(),
+    temporaryHp: zod.number(),
+    armorClass: zod.number(),
+    speed: zod.number(),
+    initiativeBonus: zod.number(),
+    skillProficiencies: zod.array(zod.string()),
+    savingThrowProficiencies: zod.array(zod.string()),
+    toolProficiencies: zod.array(zod.string()),
+    weaponProficiencies: zod.array(zod.string()),
+    armorProficiencies: zod.array(zod.string()),
+    languageProficiencies: zod.array(zod.string()),
+    deathSaveSuccesses: zod.number(),
+    deathSaveFailures: zod.number(),
+    spellcastingAbility: zod.string().nullish(),
+    preparedSpells: zod.array(zod.string()),
+    knownSpells: zod.array(zod.string()),
+    spellSlots: zod.record(
+      zod.string(),
+      zod.object({
+        max: zod.number().optional(),
+        used: zod.number().optional(),
+      }),
+    ),
+    cp: zod.number(),
+    sp: zod.number(),
+    ep: zod.number(),
+    gp: zod.number(),
+    pp: zod.number(),
+    personalityTraits: zod.string(),
+    ideals: zod.string(),
+    bonds: zod.string(),
+    flaws: zod.string(),
+    backstory: zod.string(),
+    notes: zod.string(),
+    appearance: zod.string(),
+    features: zod.array(zod.object({}).passthrough()),
+    conditions: zod.array(zod.string()),
+    avatarUrl: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
+
+/**
+ * @summary Generate build advice for a character
+ */
+export const GenerateBuildAdviceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GenerateBuildAdviceBody = zod.object({
+  focus: zod
+    .string()
+    .optional()
+    .describe("Optional question or area of focus from the player"),
+});
+
+export const GenerateBuildAdviceResponse = zod.object({
+  advice: zod.string(),
+});
+
+/**
+ * @summary Generate a session recap (DM only)
+ */
+export const GenerateSessionRecapParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GenerateSessionRecapBody = zod.object({
+  sessionNotes: zod
+    .string()
+    .optional()
+    .describe("Optional DM notes from the most recent session"),
+});
+
+export const GenerateSessionRecapResponse = zod.object({
+  recap: zod.string(),
+});
+
+/**
+ * @summary Get AI advice on the party's ledger and shared resources
+ */
+export const GenerateLedgerAdviceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GenerateLedgerAdviceBody = zod.object({
+  question: zod
+    .string()
+    .optional()
+    .describe("Optional question the party wants answered"),
+});
+
+export const GenerateLedgerAdviceResponse = zod.object({
+  advice: zod.string(),
+});

@@ -39,14 +39,17 @@ import {
   getListCampaignsQueryKey,
   getListCampaignCharactersQueryKey,
   useListCampaigns,
+  useGenerateSessionRecap,
+  useGenerateLedgerAdvice,
 } from "@workspace/api-client-react";
+import AIPanel from "@/components/AIPanel";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/react";
 import {
   ArrowLeft, Copy, RefreshCw, Trash2, Plus, ArrowRightLeft,
   Shield, Heart, Eye, Coins, Clock, Package, Users, Swords,
-  ChevronDown, ChevronUp, UserMinus,
+  ChevronDown, ChevronUp, UserMinus, Scroll, Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -147,6 +150,29 @@ export default function CampaignPage({ id }: Props) {
   // Attach character dialog
   const [attachOpen, setAttachOpen] = useState(false);
   const [attachCharId, setAttachCharId] = useState<string>("");
+
+  // ── AI: Session Recap + Ledger Advice ──────────────────────────────────────
+  const [recapResult, setRecapResult] = useState<string | null>(null);
+  const [recapError, setRecapError] = useState<string | null>(null);
+  const generateRecap = useGenerateSessionRecap({
+    mutation: {
+      onSuccess: (data) => { setRecapResult(data.recap); setRecapError(null); },
+      onError: (err: unknown) => {
+        setRecapError(err instanceof Error ? err.message : "Failed to generate recap");
+      },
+    },
+  });
+
+  const [ledgerAdviceResult, setLedgerAdviceResult] = useState<string | null>(null);
+  const [ledgerAdviceError, setLedgerAdviceError] = useState<string | null>(null);
+  const generateLedgerAdvice = useGenerateLedgerAdvice({
+    mutation: {
+      onSuccess: (data) => { setLedgerAdviceResult(data.advice); setLedgerAdviceError(null); },
+      onError: (err: unknown) => {
+        setLedgerAdviceError(err instanceof Error ? err.message : "Failed to generate advice");
+      },
+    },
+  });
 
   const filteredItems = (partyItems ?? []).filter((item) =>
     item.name.toLowerCase().includes(itemSearch.toLowerCase())
@@ -409,6 +435,29 @@ export default function CampaignPage({ id }: Props) {
           {/* ── Party Tab ── */}
           <TabsContent value="party">
             <div className="space-y-6">
+              {/* DM-only: AI Session Recap */}
+              {isDm && (
+                <AIPanel
+                  title="Session Recap"
+                  description="Read this aloud at the start of your next session."
+                  buttonLabel="Generate Recap"
+                  icon={<Scroll className="h-4 w-4 text-amber-400" />}
+                  testId="ai-session-recap"
+                  inputs={[
+                    { key: "sessionNotes", label: "Notes from last session (optional)", placeholder: "Bullet points, NPCs met, decisions made…", rows: 3 },
+                  ]}
+                  result={recapResult}
+                  isPending={generateRecap.isPending}
+                  error={recapError}
+                  onGenerate={(values) =>
+                    generateRecap.mutate({
+                      id,
+                      data: { sessionNotes: values.sessionNotes?.trim() || undefined },
+                    })
+                  }
+                />
+              )}
+
               {/* Members section */}
               <div>
                 <h2 className="font-serif text-lg font-semibold mb-3">Members</h2>
@@ -539,6 +588,27 @@ export default function CampaignPage({ id }: Props) {
           {/* ── Inventory Tab ── */}
           <TabsContent value="inventory">
             <div className="space-y-6">
+              {/* AI Ledger Assistant (any member) */}
+              <AIPanel
+                title="Ledger Assistant"
+                description="Ask the party treasurer for thoughts on the stash."
+                buttonLabel="Ask the Treasurer"
+                icon={<Wand2 className="h-4 w-4 text-amber-400" />}
+                testId="ai-ledger-advice"
+                inputs={[
+                  { key: "question", label: "Question (optional)", placeholder: "Should we sell the +1 longsword? How do we split this haul?", rows: 2 },
+                ]}
+                result={ledgerAdviceResult}
+                isPending={generateLedgerAdvice.isPending}
+                error={ledgerAdviceError}
+                onGenerate={(values) =>
+                  generateLedgerAdvice.mutate({
+                    id,
+                    data: { question: values.question?.trim() || undefined },
+                  })
+                }
+              />
+
               {/* Party Currency Pool */}
               <Card>
                 <CardHeader className="pb-3">

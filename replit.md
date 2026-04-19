@@ -8,7 +8,7 @@
 
 - **Phase 1** (COMPLETED): Auth + DB schema + SRD data + OpenAPI codegen + backend routes + React frontend
 - **Phase 2** (COMPLETED): Campaigns + invite codes + DM/player roles + party characters (attach/detach) + shared party inventory + party currency pool (5 denominations) + transfer/deposit/withdraw/coin-split + ledger audit trail
-- **Phase 3** (planned): AI workflows (NPC generation, encounter suggestions, backstory)
+- **Phase 3** (COMPLETED): AI workflows powered by Replit's OpenAI integration (gpt-5.2): backstory generator (persisted on character), build advisor on character sheet, DM-only session recap, and party ledger assistant. Reusable `<AIPanel>` component, lazy OpenAI client (server boots without AI env vars), and graceful 429/502/503 error handling.
 - **Phase 4** (planned): Social discovery (share characters, public profiles)
 
 ## Stack

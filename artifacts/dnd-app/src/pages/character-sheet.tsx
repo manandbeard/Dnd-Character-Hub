@@ -16,13 +16,16 @@ import {
   useAddInventoryItem,
   useRemoveInventoryItem,
   useUpdateInventoryItem,
+  useGenerateBackstory,
+  useGenerateBuildAdvice,
   getGetCharacterQueryKey,
   getGetCharacterDerivedStatsQueryKey,
   getListCharacterInventoryQueryKey,
 } from "@workspace/api-client-react";
+import AIPanel from "@/components/AIPanel";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Zap, Plus, Trash2, ArrowUp, Heart, Skull } from "lucide-react";
+import { Shield, Zap, Plus, Trash2, ArrowUp, Heart, Skull, Wand2, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props { id: number; }
@@ -96,6 +99,39 @@ export default function CharacterSheet({ id }: Props) {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemQty, setNewItemQty] = useState(1);
+
+  // ── AI: Backstory + Build Advisor ─────────────────────────────────────────
+  const [backstoryResult, setBackstoryResult] = useState<string | null>(null);
+  const [backstoryError, setBackstoryError] = useState<string | null>(null);
+  const generateBackstory = useGenerateBackstory({
+    mutation: {
+      onSuccess: (data) => {
+        setBackstoryResult(data.backstory);
+        setBackstoryError(null);
+        queryClient.invalidateQueries({ queryKey: getGetCharacterQueryKey(id) });
+        toast({ title: "Backstory ready", description: "The threads of fate have been woven." });
+      },
+      onError: (err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Failed to generate backstory";
+        setBackstoryError(msg);
+      },
+    },
+  });
+
+  const [adviceResult, setAdviceResult] = useState<string | null>(null);
+  const [adviceError, setAdviceError] = useState<string | null>(null);
+  const generateAdvice = useGenerateBuildAdvice({
+    mutation: {
+      onSuccess: (data) => {
+        setAdviceResult(data.advice);
+        setAdviceError(null);
+      },
+      onError: (err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Failed to generate advice";
+        setAdviceError(msg);
+      },
+    },
+  });
 
   function handleHpChange(delta: number) {
     if (!character) return;
@@ -256,6 +292,27 @@ export default function CharacterSheet({ id }: Props) {
 
           {/* ── OVERVIEW TAB: Ability Scores + Saving Throws + Spellcasting ── */}
           <TabsContent value="overview" className="space-y-4">
+            {/* AI Build Advisor */}
+            <AIPanel
+              title="Build Advisor"
+              description="Ask a seasoned DM for tactical guidance and what to pick next."
+              buttonLabel="Ask the Advisor"
+              icon={<Wand2 className="h-4 w-4 text-amber-400" />}
+              testId="ai-build-advisor"
+              inputs={[
+                { key: "focus", label: "Specific question (optional)", placeholder: "Should I take Sharpshooter or +2 DEX at level 4?", rows: 2 },
+              ]}
+              result={adviceResult}
+              isPending={generateAdvice.isPending}
+              error={adviceError}
+              onGenerate={(values) =>
+                generateAdvice.mutate({
+                  id,
+                  data: { focus: values.focus?.trim() || undefined },
+                })
+              }
+            />
+
             {/* Ability Scores */}
             <div className="grid grid-cols-6 gap-3">
               {ABILITIES.map((ability) => {
@@ -509,14 +566,48 @@ export default function CharacterSheet({ id }: Props) {
             {/* Backstory */}
             {character.backstory && (
               <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 flex-row items-center justify-between">
                   <CardTitle className="text-sm">Backstory</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setBackstoryResult(null); setBackstoryError(null); }}
+                    className="text-xs h-7"
+                    data-testid="button-rewrite-backstory"
+                  >
+                    <Wand2 className="h-3 w-3 mr-1" /> Rewrite with AI
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{character.backstory}</p>
                 </CardContent>
               </Card>
             )}
+
+            {/* AI Backstory Generator (always available) */}
+            <AIPanel
+              title={character.backstory ? "Rewrite Backstory with AI" : "Generate Backstory with AI"}
+              description="Hand the quill to a seasoned DM. Optionally guide the tone or themes."
+              buttonLabel={character.backstory ? "Rewrite Backstory" : "Weave a Backstory"}
+              icon={<BookOpen className="h-4 w-4 text-amber-400" />}
+              testId="ai-backstory"
+              inputs={[
+                { key: "tone", label: "Tone (optional)", placeholder: "tragic, hopeful, comedic, mysterious…", rows: 1 },
+                { key: "themes", label: "Themes & hooks (optional)", placeholder: "lost sibling, oath sworn at the crossroads, debt to a hag…", rows: 2 },
+              ]}
+              result={backstoryResult}
+              isPending={generateBackstory.isPending}
+              error={backstoryError}
+              onGenerate={(values) =>
+                generateBackstory.mutate({
+                  id,
+                  data: {
+                    tone: values.tone?.trim() || undefined,
+                    themes: values.themes?.trim() || undefined,
+                  },
+                })
+              }
+            />
 
             {/* Skill proficiencies */}
             {(character.skillProficiencies as string[]).length > 0 && (

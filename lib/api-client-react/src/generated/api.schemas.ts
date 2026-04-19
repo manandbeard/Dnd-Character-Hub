@@ -563,6 +563,45 @@ export interface LedgerEntry {
   createdAt: string;
 }
 
+export interface GenerateBackstoryBody {
+  /** e.g. "tragic", "hopeful", "comedic" */
+  tone?: string;
+  /** Free-form themes or hooks the player wants explored */
+  themes?: string;
+}
+
+export interface GenerateBackstoryResponse {
+  backstory: string;
+  character: Character;
+}
+
+export interface GenerateBuildAdviceBody {
+  /** Optional question or area of focus from the player */
+  focus?: string;
+}
+
+export interface GenerateBuildAdviceResponse {
+  advice: string;
+}
+
+export interface GenerateSessionRecapBody {
+  /** Optional DM notes from the most recent session */
+  sessionNotes?: string;
+}
+
+export interface GenerateSessionRecapResponse {
+  recap: string;
+}
+
+export interface GenerateLedgerAdviceBody {
+  /** Optional question the party wants answered */
+  question?: string;
+}
+
+export interface GenerateLedgerAdviceResponse {
+  advice: string;
+}
+
 export type ListSpellsParams = {
   class?: string;
   level?: number;

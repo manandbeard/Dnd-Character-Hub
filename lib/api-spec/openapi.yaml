@@ -32,6 +32,8 @@ tags:
     description: Party shared item stash and currency pool
   - name: party-ledger
     description: Campaign transaction history
+  - name: ai
+    description: AI-assisted generation (backstory, build advice, recap, ledger advice)
 
 paths:
   /healthz:
@@ -1461,6 +1463,174 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /ai/characters/{id}/backstory:
+    post:
+      operationId: generateBackstory
+      tags: [ai]
+      summary: Generate an AI backstory for a character
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateBackstoryBody"
+      responses:
+        "200":
+          description: Generated backstory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateBackstoryResponse"
+        "403":
+          description: Not your character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: AI provider failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /ai/characters/{id}/advice:
+    post:
+      operationId: generateBuildAdvice
+      tags: [ai]
+      summary: Generate build advice for a character
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateBuildAdviceBody"
+      responses:
+        "200":
+          description: Generated advice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateBuildAdviceResponse"
+        "403":
+          description: Not your character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: AI provider failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /ai/campaigns/{id}/recap:
+    post:
+      operationId: generateSessionRecap
+      tags: [ai]
+      summary: Generate a session recap (DM only)
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateSessionRecapBody"
+      responses:
+        "200":
+          description: Generated recap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateSessionRecapResponse"
+        "403":
+          description: Not the campaign DM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: AI provider failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /ai/campaigns/{id}/ledger-advice:
+    post:
+      operationId: generateLedgerAdvice
+      tags: [ai]
+      summary: Get AI advice on the party's ledger and shared resources
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateLedgerAdviceBody"
+      responses:
+        "200":
+          description: Generated advice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateLedgerAdviceResponse"
+        "403":
+          description: Not a campaign member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: AI provider failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   securitySchemes:
     clerkAuth:
@@ -2660,3 +2830,70 @@ components:
         - notes
         - metadata
         - createdAt
+
+    # ── AI ──────────────────────────────────────────────────────────────────
+    GenerateBackstoryBody:
+      type: object
+      properties:
+        tone:
+          type: string
+          description: e.g. "tragic", "hopeful", "comedic"
+        themes:
+          type: string
+          description: Free-form themes or hooks the player wants explored
+
+    GenerateBackstoryResponse:
+      type: object
+      properties:
+        backstory:
+          type: string
+        character:
+          $ref: "#/components/schemas/Character"
+      required:
+        - backstory
+        - character
+
+    GenerateBuildAdviceBody:
+      type: object
+      properties:
+        focus:
+          type: string
+          description: Optional question or area of focus from the player
+
+    GenerateBuildAdviceResponse:
+      type: object
+      properties:
+        advice:
+          type: string
+      required:
+        - advice
+
+    GenerateSessionRecapBody:
+      type: object
+      properties:
+        sessionNotes:
+          type: string
+          description: Optional DM notes from the most recent session
+
+    GenerateSessionRecapResponse:
+      type: object
+      properties:
+        recap:
+          type: string
+      required:
+        - recap
+
+    GenerateLedgerAdviceBody:
+      type: object
+      properties:
+        question:
+          type: string
+          description: Optional question the party wants answered
+
+    GenerateLedgerAdviceResponse:
+      type: object
+      properties:
+        advice:
+          type: string
+      required:
+        - advice
