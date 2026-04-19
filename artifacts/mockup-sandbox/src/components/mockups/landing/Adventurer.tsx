@@ -77,7 +77,7 @@ export function Adventurer() {
 
               <div className="flex flex-col sm:flex-row items-start gap-4">
                 <Button 
-                  onClick={() => { /* graduation will hook Clerk here */ }}
+                  onClick={() => { (window.top ?? window).location.href = "/sign-in"; }}
                   className="h-12 px-6 w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 shadow-sm hover:shadow text-base font-semibold transition-all"
                 >
                   <GoogleIcon />

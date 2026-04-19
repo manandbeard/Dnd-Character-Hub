@@ -41,7 +41,7 @@ export function Quill() {
 
           <div className="flex flex-col items-center gap-4 w-full max-w-sm">
             <button 
-              onClick={() => { /* graduation will hook Clerk here */ }}
+              onClick={() => { (window.top ?? window).location.href = "/sign-in"; }}
               className="w-full flex items-center justify-center gap-3 bg-[#f4ead5] hover:bg-white text-[#0a0806] rounded-full py-4 px-8 font-sans font-medium text-base transition-all transform hover:scale-[1.02] shadow-lg shadow-[#0a0806]/50"
             >
               <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">

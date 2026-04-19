@@ -3,14 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Dices, 
-  Swords, 
-  Shield, 
-  ScrollText, 
-  Map, 
-  Users 
-} from "lucide-react";
+import { Shield, ScrollText, Map, Users } from "lucide-react";
+
+const goToRealSignIn = () => {
+  const top = window.top ?? window;
+  top.location.href = "/sign-in";
+};
 
 export function Tavern() {
   return (
@@ -36,7 +34,7 @@ export function Tavern() {
 
           <Button 
             className="w-full h-12 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded-xl text-base mb-6 shadow-sm flex items-center justify-center gap-3 transition-transform hover:scale-[1.02] active:scale-95"
-            onClick={() => { /* graduation will hook Clerk here */ }}
+            onClick={goToRealSignIn}
           >
             <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -178,10 +176,6 @@ export function Tavern() {
 
         {/* Overlay Content — pinned to bottom so it doesn't fight the die */}
         <div className="relative z-20 px-8 pb-16 mt-auto self-end text-center max-w-lg">
-          {/* keep references to lucide imports used elsewhere */}
-          <Dices className="hidden" />
-          <Swords className="hidden" />
-          <Shield className="hidden" />
           <h2 className="text-5xl md:text-6xl font-black text-white mb-6 leading-tight drop-shadow-2xl">
             Your Table,<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-teal-300">
