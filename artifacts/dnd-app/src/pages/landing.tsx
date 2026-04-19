@@ -29,7 +29,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#110e1b] text-slate-200 overflow-hidden font-sans">
+    <div className="min-h-screen w-full flex flex-col-reverse md:flex-row bg-[#110e1b] text-slate-200 overflow-hidden font-sans">
       {/* LEFT HALF: Sign-in card */}
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8 md:p-12 lg:p-24 relative z-10">
         {/* Logo */}
