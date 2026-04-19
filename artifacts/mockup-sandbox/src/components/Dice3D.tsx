@@ -1,4 +1,4 @@
-import { useMemo, useRef, Suspense, useState, useEffect } from "react";
+import { useMemo, useRef, Suspense, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Text, Float } from "@react-three/drei";
 import * as THREE from "three";
@@ -106,12 +106,10 @@ function D20Mesh() {
 }
 
 export function Dice3D() {
-  const [hasWebGL, setHasWebGL] = useState<boolean | null>(null);
-  useEffect(() => {
-    setHasWebGL(detectWebGL());
-  }, []);
-  if (hasWebGL === false) return <FallbackD20 />;
-  if (hasWebGL === null) return null;
+  const [hasWebGL] = useState<boolean>(() =>
+    typeof window === "undefined" ? true : detectWebGL(),
+  );
+  if (!hasWebGL) return <FallbackD20 />;
   return (
     <Canvas
       camera={{ position: [0, 0, 4.6], fov: 42 }}
