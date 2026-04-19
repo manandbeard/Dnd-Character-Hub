@@ -55,11 +55,15 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border px-8 py-4 flex items-center justify-between bg-card">
-        <Link href={isSignedIn ? "/characters" : "/"} className="flex items-center gap-2.5">
-          <Shield className="w-6 h-6 text-primary" />
-          <span className="font-serif font-bold text-xl tracking-wide">DDnD</span>
-          <span className="text-muted-foreground text-sm ml-3">Discover</span>
+      <header className="border-b border-border px-8 py-4 flex items-center justify-between bg-card/60 backdrop-blur">
+        <Link href={isSignedIn ? "/characters" : "/"} className="flex items-center gap-3">
+          <div className="bg-primary/15 p-1.5 rounded-lg border border-primary/30">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <span className="font-serif font-bold text-xl tracking-wide bg-gradient-to-br from-primary via-primary to-secondary bg-clip-text text-transparent">
+            DDnD
+          </span>
+          <span className="text-muted-foreground text-sm ml-2 hidden sm:inline">Discover</span>
         </Link>
         <div className="flex gap-3">
           {isSignedIn ? (
@@ -71,8 +75,10 @@ export default function DiscoverPage() {
       </header>
 
       <main className="flex-1 p-8 max-w-6xl w-full mx-auto">
-        <div className="mb-6">
-          <h1 className="font-serif text-3xl font-bold mb-2">Find a Campaign</h1>
+        <div className="mb-8">
+          <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2 tracking-tight">
+            Find a <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Campaign</span>
+          </h1>
           <p className="text-muted-foreground">Browse open recruitment listings from DMs around the realm.</p>
         </div>
 
@@ -124,7 +130,7 @@ export default function DiscoverPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {listings.map((l) => (
-              <Card key={l.listing.id} data-testid={`listing-${l.listing.id}`} className="flex flex-col">
+              <Card key={l.listing.id} data-testid={`listing-${l.listing.id}`} className="flex flex-col hover:border-primary/50 transition-colors">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
                     <div>

@@ -68,7 +68,7 @@ function signedInt(n: number) {
 
 function HpBar({ current, max }: { current: number; max: number }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0;
-  const color = pct > 50 ? "bg-green-600" : pct > 25 ? "bg-amber-500" : "bg-destructive";
+  const color = pct > 50 ? "bg-chart-2" : pct > 25 ? "bg-chart-3" : "bg-destructive";
   return (
     <div className="w-full bg-muted rounded-full h-2">
       <div className={cn("h-2 rounded-full transition-all", color)} style={{ width: `${pct}%` }} />
@@ -198,8 +198,8 @@ export default function CharacterSheet({ id }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="font-serif text-3xl font-bold" data-testid="text-character-name">{character.name}</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">
+            <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-br from-foreground via-foreground to-primary bg-clip-text text-transparent" data-testid="text-character-name">{character.name}</h1>
+            <p className="text-muted-foreground text-sm mt-1">
               Level {character.level} {capitalize(character.race)} {capitalize(character.class)}
               {character.background && ` · ${capitalize(character.background)}`}
               {" · "}{character.alignment}
@@ -223,7 +223,7 @@ export default function CharacterSheet({ id }: Props) {
                 <span className="text-2xl font-bold" data-testid="text-current-hp">{character.currentHp}</span>
                 <span className="text-muted-foreground">/ {character.maxHp}</span>
                 {character.temporaryHp > 0 && (
-                  <span className="text-xs text-blue-400 ml-1">+{character.temporaryHp} temp</span>
+                  <span className="text-xs text-chart-4 ml-1">+{character.temporaryHp} temp</span>
                 )}
               </div>
               <HpBar current={character.currentHp} max={character.maxHp} />
@@ -297,7 +297,7 @@ export default function CharacterSheet({ id }: Props) {
               title="Build Advisor"
               description="Ask a seasoned DM for tactical guidance and what to pick next."
               buttonLabel="Ask the Advisor"
-              icon={<Wand2 className="h-4 w-4 text-amber-400" />}
+              icon={<Wand2 className="h-4 w-4 text-chart-3" />}
               testId="ai-build-advisor"
               inputs={[
                 { key: "focus", label: "Specific question (optional)", placeholder: "Should I take Sharpshooter or +2 DEX at level 4?", rows: 2 },
@@ -419,7 +419,7 @@ export default function CharacterSheet({ id }: Props) {
                     <span className="text-4xl font-bold" data-testid="text-combat-current-hp">{character.currentHp}</span>
                     <span className="text-muted-foreground text-lg">/ {character.maxHp}</span>
                     {character.temporaryHp > 0 && (
-                      <span className="text-sm text-blue-400">+{character.temporaryHp} temp</span>
+                      <span className="text-sm text-chart-4">+{character.temporaryHp} temp</span>
                     )}
                   </div>
                   <HpBar current={character.currentHp} max={character.maxHp} />
@@ -437,7 +437,7 @@ export default function CharacterSheet({ id }: Props) {
                       data-testid="button-hp-damage">
                       Damage
                     </Button>
-                    <Button size="sm" variant="outline" className="text-green-400 border-green-600/40 hover:bg-green-900/20"
+                    <Button size="sm" variant="outline" className="text-chart-2 border-chart-2/40 hover:bg-chart-2/10"
                       onClick={() => handleHpChange(Math.abs(hpDelta))}
                       data-testid="button-hp-heal">
                       Heal
@@ -494,7 +494,7 @@ export default function CharacterSheet({ id }: Props) {
                       <p className="text-muted-foreground mb-2">Successes (3 = stable)</p>
                       <div className="flex gap-2">
                         {[0, 1, 2].map((i) => (
-                          <div key={i} className="w-8 h-8 rounded-full border border-green-600 bg-green-900/20" />
+                          <div key={i} className="w-8 h-8 rounded-full border border-chart-2 bg-chart-2/10" />
                         ))}
                       </div>
                     </div>
@@ -589,7 +589,7 @@ export default function CharacterSheet({ id }: Props) {
               title={character.backstory ? "Rewrite Backstory with AI" : "Generate Backstory with AI"}
               description="Hand the quill to a seasoned DM. Optionally guide the tone or themes."
               buttonLabel={character.backstory ? "Rewrite Backstory" : "Weave a Backstory"}
-              icon={<BookOpen className="h-4 w-4 text-amber-400" />}
+              icon={<BookOpen className="h-4 w-4 text-chart-3" />}
               testId="ai-backstory"
               inputs={[
                 { key: "tone", label: "Tone (optional)", placeholder: "tragic, hopeful, comedic, mysterious…", rows: 1 },

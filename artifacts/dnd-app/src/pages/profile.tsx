@@ -52,10 +52,14 @@ export default function ProfilePage({ userId }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border px-8 py-4 flex items-center justify-between bg-card">
-        <Link href={isSignedIn ? "/characters" : "/discover"} className="flex items-center gap-2.5">
-          <Shield className="w-6 h-6 text-primary" />
-          <span className="font-serif font-bold text-xl">DDnD</span>
+      <header className="border-b border-border px-8 py-4 flex items-center justify-between bg-card/60 backdrop-blur">
+        <Link href={isSignedIn ? "/characters" : "/discover"} className="flex items-center gap-3">
+          <div className="bg-primary/15 p-1.5 rounded-lg border border-primary/30">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <span className="font-serif font-bold text-xl tracking-wide bg-gradient-to-br from-primary via-primary to-secondary bg-clip-text text-transparent">
+            DDnD
+          </span>
         </Link>
         <Link href="/discover">
           <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1.5" />Back to Discover</Button>
@@ -79,14 +83,14 @@ export default function ProfilePage({ userId }: Props) {
                 {profile.avatarUrl ? (
                   <img src={profile.avatarUrl} alt={profile.name ?? ""} className="w-16 h-16 rounded-full object-cover" />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 border border-primary/30 flex items-center justify-center">
                     <span className="font-serif text-xl text-primary">
                       {(profile.name ?? "A").slice(0, 1).toUpperCase()}
                     </span>
                   </div>
                 )}
                 <div className="flex-1">
-                  <CardTitle className="font-serif text-2xl">{profile.name ?? "Anonymous Adventurer"}</CardTitle>
+                  <CardTitle className="font-serif text-2xl md:text-3xl tracking-tight">{profile.name ?? "Anonymous Adventurer"}</CardTitle>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     <Badge variant="outline" className="gap-1">
                       <Award className="w-3 h-3" />{EXP_LABEL[profile.experienceLevel] ?? profile.experienceLevel}

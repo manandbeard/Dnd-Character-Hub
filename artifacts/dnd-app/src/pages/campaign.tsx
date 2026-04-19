@@ -400,9 +400,9 @@ export default function CampaignPage({ id }: Props) {
           </Button>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="font-serif text-3xl font-bold">{campaign.name}</h1>
+              <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-br from-foreground via-foreground to-primary bg-clip-text text-transparent">{campaign.name}</h1>
               {campaign.description && (
-                <p className="text-muted-foreground mt-1">{campaign.description}</p>
+                <p className="text-muted-foreground mt-1.5 max-w-prose">{campaign.description}</p>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -455,7 +455,7 @@ export default function CampaignPage({ id }: Props) {
                   title="Session Recap"
                   description="Read this aloud at the start of your next session."
                   buttonLabel="Generate Recap"
-                  icon={<Scroll className="h-4 w-4 text-amber-400" />}
+                  icon={<Scroll className="h-4 w-4 text-chart-3" />}
                   testId="ai-session-recap"
                   inputs={[
                     { key: "sessionNotes", label: "Notes from last session (optional)", placeholder: "Bullet points, NPCs met, decisions made…", rows: 3 },
@@ -566,17 +566,17 @@ export default function CampaignPage({ id }: Props) {
                               </div>
                               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                                 <div className="bg-muted rounded p-1.5">
-                                  <Heart className="w-3 h-3 mx-auto mb-0.5 text-red-400" />
+                                  <Heart className="w-3 h-3 mx-auto mb-0.5 text-destructive" />
                                   <span className="font-bold">{char.currentHp}/{char.maxHp}</span>
                                   <div className="text-muted-foreground">HP</div>
                                 </div>
                                 <div className="bg-muted rounded p-1.5">
-                                  <Shield className="w-3 h-3 mx-auto mb-0.5 text-blue-400" />
+                                  <Shield className="w-3 h-3 mx-auto mb-0.5 text-chart-4" />
                                   <span className="font-bold">{char.armorClass}</span>
                                   <div className="text-muted-foreground">AC</div>
                                 </div>
                                 <div className="bg-muted rounded p-1.5">
-                                  <Eye className="w-3 h-3 mx-auto mb-0.5 text-green-400" />
+                                  <Eye className="w-3 h-3 mx-auto mb-0.5 text-chart-2" />
                                   <span className="font-bold">{derived.passivePerception ?? "—"}</span>
                                   <div className="text-muted-foreground">Perc.</div>
                                 </div>
@@ -607,7 +607,7 @@ export default function CampaignPage({ id }: Props) {
                 title="Ledger Assistant"
                 description="Ask the party treasurer for thoughts on the stash."
                 buttonLabel="Ask the Treasurer"
-                icon={<Wand2 className="h-4 w-4 text-amber-400" />}
+                icon={<Wand2 className="h-4 w-4 text-chart-3" />}
                 testId="ai-ledger-advice"
                 inputs={[
                   { key: "question", label: "Question (optional)", placeholder: "Should we sell the +1 longsword? How do we split this haul?", rows: 2 },

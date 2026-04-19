@@ -92,7 +92,12 @@ export default function AccountPage() {
   return (
     <AppLayout>
       <div className="p-8 max-w-2xl">
-        <h1 className="font-serif text-2xl font-bold mb-6">Account & Profile</h1>
+        <div className="mb-8">
+          <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-tight mb-1">
+            Account &amp; <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Profile</span>
+          </h1>
+          <p className="text-muted-foreground text-sm">Manage your identity and how you appear to other adventurers.</p>
+        </div>
 
         {me.isLoading ? (
           <div className="text-muted-foreground text-sm">Loading...</div>
