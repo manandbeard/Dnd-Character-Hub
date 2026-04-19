@@ -77,6 +77,16 @@
 - `lib/api-spec/openapi.yaml` — single source of truth for all API contracts
 - `lib/api-client-react/src/generated/` — auto-generated React Query hooks + Zod schemas (do not edit)
 
+## Manual Setup Required
+
+- **Google OAuth (Clerk dashboard)**: For "Continue with Google" on the landing page to actually authenticate users, the Google social connection must be enabled in the Clerk dashboard for this app's instance. Steps:
+  1. Open the Clerk dashboard for this app's Clerk instance.
+  2. Go to **User & Authentication → Social Connections**.
+  3. Toggle **Google** on. For development you can use Clerk's shared dev credentials; for production paste your own Google OAuth Client ID/Secret.
+  4. Smoke-test: click "Continue with Google" on `/` → Google consent screen → `/sso-callback` → `/characters` with a real Clerk session.
+
+  This is a one-time configuration the project owner must perform — it cannot be done from inside the codebase.
+
 ## Important Notes
 
 - User IDs are Clerk string IDs (text PK). Character IDs are serial ints.
