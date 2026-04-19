@@ -22,8 +22,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="px-5 py-6 border-b border-sidebar-border">
           <Link href="/characters" className="flex items-center gap-2.5">
-            <Shield className="w-6 h-6 text-primary" />
-            <span className="font-serif font-bold text-xl tracking-wide text-sidebar-foreground">DDnD</span>
+            <div className="bg-primary/15 p-1.5 rounded-lg border border-primary/25">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <span className="font-black text-xl tracking-tight bg-gradient-to-br from-purple-300 to-teal-400 bg-clip-text text-transparent">
+              DDnD
+            </span>
           </Link>
         </div>
 

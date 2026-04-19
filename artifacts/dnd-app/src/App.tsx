@@ -2,7 +2,7 @@ import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@clerk/react";
+import { useAuth, AuthenticateWithRedirectCallback } from "@clerk/react";
 import { useEffect } from "react";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
@@ -58,6 +58,15 @@ function Router() {
       </Route>
       <Route path="/sign-in">
         {isLoaded && isSignedIn ? <Redirect to="/characters" /> : <SignInPage />}
+      </Route>
+      <Route path="/sso-callback">
+        <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            Finishing sign-in…
+          </div>
+          <AuthenticateWithRedirectCallback signInForceRedirectUrl="/characters" signUpForceRedirectUrl="/characters" />
+        </div>
       </Route>
       <Route path="/characters">
         <AuthGuard><Characters /></AuthGuard>

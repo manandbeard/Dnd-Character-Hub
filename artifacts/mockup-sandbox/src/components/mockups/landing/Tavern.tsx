@@ -125,45 +125,63 @@ export function Tavern() {
       {/* RIGHT HALF: Animated Hero */}
       <div className="w-full md:w-1/2 relative bg-[#0a0812] flex items-center justify-center overflow-hidden min-h-[50vh] md:min-h-screen">
         
-        {/* Background Image */}
+        {/* Background — runic atmospheric backdrop */}
         <div className="absolute inset-0 z-0 opacity-40">
           <img 
             src="/__mockup/images/tavern-hero.png" 
-            alt="Hero background" 
+            alt="" 
+            aria-hidden
             className="w-full h-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#110e1b] via-transparent to-transparent md:block hidden" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#110e1b] via-transparent to-transparent md:hidden block" />
         </div>
 
+        {/* Radial molten halo behind the die */}
+        <div className="absolute inset-0 z-[1] pointer-events-none flex items-center justify-center">
+          <div
+            className="w-[60%] aspect-square rounded-full blur-3xl animate-pulse-glow"
+            style={{ background: "radial-gradient(circle, rgba(255,90,30,0.35) 0%, rgba(168,85,247,0.18) 40%, transparent 70%)" }}
+          />
+        </div>
+
         {/* CSS Animations */}
         <style dangerouslySetInnerHTML={{__html: `
-          @keyframes float-slow {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(5deg); }
+          @keyframes spin-tilt {
+            0%   { transform: rotate3d(1, 1.2, 0.4, 0deg); }
+            100% { transform: rotate3d(1, 1.2, 0.4, 360deg); }
           }
-          @keyframes float-fast {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(-10deg); }
+          @keyframes float-bob {
+            0%, 100% { transform: translateY(0px); }
+            50%      { transform: translateY(-14px); }
           }
           @keyframes pulse-glow {
-            0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 15px rgba(168,85,247,0.4)); }
-            50% { opacity: 1; filter: drop-shadow(0 0 30px rgba(45,212,191,0.8)); }
+            0%, 100% { opacity: 0.55; }
+            50%      { opacity: 1; }
           }
-          .animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
-          .animate-float-fast { animation: float-fast 5s ease-in-out infinite; }
+          .animate-spin-tilt { animation: spin-tilt 14s linear infinite; transform-style: preserve-3d; }
+          .animate-float-bob { animation: float-bob 6s ease-in-out infinite; }
           .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
         `}} />
 
-        {/* Decorative Floating Elements (Abstracting the d20s if image isn't enough) */}
-        <div className="absolute inset-0 z-10 pointer-events-none">
-           <Dices className="absolute top-1/4 left-1/4 w-16 h-16 text-purple-400/30 animate-float-slow animate-pulse-glow" />
-           <Swords className="absolute bottom-1/3 right-1/4 w-20 h-20 text-teal-400/20 animate-float-fast animate-pulse-glow" />
-           <Shield className="absolute top-1/3 right-1/3 w-12 h-12 text-amber-400/20 animate-float-slow animate-pulse-glow" style={{ animationDelay: '2s' }} />
+        {/* Spinning Obsidian D20 — the centerpiece */}
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+          <div className="animate-float-bob" style={{ perspective: "1200px" }}>
+            <img
+              src="/__mockup/images/obsidian-d20.png"
+              alt="Obsidian d20"
+              className="w-[60%] max-w-[420px] mx-auto animate-spin-tilt drop-shadow-[0_25px_45px_rgba(255,80,20,0.35)]"
+              style={{ mixBlendMode: "screen", filter: "drop-shadow(0 0 35px rgba(255,90,30,0.45))" }}
+            />
+          </div>
         </div>
 
-        {/* Overlay Content */}
-        <div className="relative z-20 px-8 text-center max-w-lg">
+        {/* Overlay Content — pinned to bottom so it doesn't fight the die */}
+        <div className="relative z-20 px-8 pb-16 mt-auto self-end text-center max-w-lg">
+          {/* keep references to lucide imports used elsewhere */}
+          <Dices className="hidden" />
+          <Swords className="hidden" />
+          <Shield className="hidden" />
           <h2 className="text-5xl md:text-6xl font-black text-white mb-6 leading-tight drop-shadow-2xl">
             Your Table,<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-teal-300">

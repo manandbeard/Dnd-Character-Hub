@@ -10,6 +10,7 @@
 - **Phase 2** (COMPLETED): Campaigns + invite codes + DM/player roles + party characters (attach/detach) + shared party inventory + party currency pool (5 denominations) + transfer/deposit/withdraw/coin-split + ledger audit trail
 - **Phase 3** (COMPLETED): AI workflows powered by Replit's OpenAI integration (gpt-5.2): backstory generator (persisted on character), build advisor on character sheet, DM-only session recap, and party ledger assistant. Reusable `<AIPanel>` component, lazy OpenAI client (server boots without AI env vars), and graceful 429/502/503 error handling.
 - **Phase 4** (COMPLETED): Social graph & campaign discovery
+- **Landing redesign** (COMPLETED): "Tavern Door" split-screen landing with one-click Google sign-in via `useSignIn().authenticateWithRedirect`, `/sign-in` email fallback route, `/sso-callback` for Clerk redirect handshake. Spinning obsidian d20 hero. Shell tokens (index.css) shifted from crimson to purple/teal to match landing. **NOTE for user:** the Google OAuth provider must be enabled in the Clerk dashboard (one-time setup) for "Continue with Google" to actually authenticate.
   - User profile fields: `bio`, `playstyleTags`, `experienceLevel`, `availability`, `isPublic` (defaults applied via DB)
   - Campaign privacy enum (`public`/`invite_only`/`private`) — default `invite_only` preserves prior behavior
   - New tables: `campaign_listings`, `join_requests`, `user_blocks`, `reports`
